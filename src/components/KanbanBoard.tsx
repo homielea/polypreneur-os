@@ -82,7 +82,7 @@ export const KanbanBoard = ({ projects, onUpdateProject, onCloneProject }: Kanba
                       {project.type.replace("-", " ")}
                     </Badge>
                     <span className="text-xs text-gray-500">
-                      {project.phases.filter(p => p.completed).length}/10 phases
+                      {project.phases.filter(p => p.completed).length}/13 phases
                     </span>
                   </div>
 

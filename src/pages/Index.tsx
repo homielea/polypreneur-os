@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,15 +32,18 @@ export interface Phase {
 
 const PHASES = [
   "Ideation",
-  "Research & Validation", 
-  "Strategy",
-  "Tech Stack",
-  "Design",
-  "Build",
-  "QA",
-  "Launch",
-  "Marketing Automation",
-  "SOP Documentation"
+  "Problem & User Discovery", 
+  "Validation & Positioning",
+  "Product Strategy",
+  "Design & UX",
+  "Build & Integrate",
+  "Final QA + Founder Review",
+  "Launch Setup & Execution",
+  "Automated Marketing & Sales",
+  "SOP Creation + Systemization",
+  "Post‑Launch Feedback Loop",
+  "Growth Experiments",
+  "Founder Reflection & Energy Reset"
 ];
 
 const Index = () => {
@@ -54,13 +56,13 @@ const Index = () => {
       title: "AI Email Assistant",
       type: "web-app",
       status: "in-progress",
-      progress: 65,
+      progress: 54,
       phases: PHASES.map((name, index) => ({
         id: `${index}`,
         name,
-        completed: index < 6,
+        completed: index < 7,
         tasks: [`Complete ${name.toLowerCase()} tasks`],
-        automationTrigger: name === "Launch" ? "launch-announcement" : name === "Marketing Automation" ? "content-automation" : undefined
+        automationTrigger: name === "Launch Setup & Execution" ? "launch-announcement" : name === "Automated Marketing & Sales" ? "content-automation" : undefined
       })),
       createdAt: new Date(),
       template: "web-app-saas"
@@ -70,13 +72,13 @@ const Index = () => {
       title: "Chrome Productivity Extension",
       type: "extension",
       status: "ideation",
-      progress: 20,
+      progress: 23,
       phases: PHASES.map((name, index) => ({
         id: `${index}`,
         name,
-        completed: index < 2,
+        completed: index < 3,
         tasks: [`Complete ${name.toLowerCase()} tasks`],
-        automationTrigger: name === "Launch" ? "launch-announcement" : name === "Marketing Automation" ? "content-automation" : undefined
+        automationTrigger: name === "Launch Setup & Execution" ? "launch-announcement" : name === "Automated Marketing & Sales" ? "content-automation" : undefined
       })),
       createdAt: new Date(),
       template: "extension-template"
@@ -95,7 +97,7 @@ const Index = () => {
         name,
         completed: false,
         tasks: [`Complete ${name.toLowerCase()} tasks`],
-        automationTrigger: name === "Launch" ? "launch-announcement" : name === "Marketing Automation" ? "content-automation" : undefined
+        automationTrigger: name === "Launch Setup & Execution" ? "launch-announcement" : name === "Automated Marketing & Sales" ? "content-automation" : undefined
       })),
       createdAt: new Date(),
       template

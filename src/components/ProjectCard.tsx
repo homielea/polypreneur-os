@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +34,7 @@ export const ProjectCard = ({ project, onUpdate, onClone }: ProjectCardProps) =>
       phases: updatedPhases,
       progress: newProgress,
       status: newProgress === 100 ? "launched" as const : 
-              newProgress >= 80 ? "ready-to-launch" as const :
+              newProgress >= 85 ? "ready-to-launch" as const :
               newProgress > 0 ? "in-progress" as const : "ideation" as const
     };
 
@@ -126,7 +125,7 @@ export const ProjectCard = ({ project, onUpdate, onClone }: ProjectCardProps) =>
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" className="w-full justify-between p-2">
-              <span className="text-sm">10-Phase Checklist</span>
+              <span className="text-sm">13-Phase Checklist</span>
               {isExpanded ? 
                 <ChevronUp className="w-4 h-4" /> : 
                 <ChevronDown className="w-4 h-4" />
@@ -174,7 +173,7 @@ export const ProjectCard = ({ project, onUpdate, onClone }: ProjectCardProps) =>
           </CollapsibleContent>
         </Collapsible>
 
-        {project.progress >= 80 && (
+        {project.progress >= 85 && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
             <div className="flex items-center gap-2 text-orange-800">
               <Rocket className="w-4 h-4" />
