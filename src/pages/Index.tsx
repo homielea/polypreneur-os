@@ -1,172 +1,16 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { TemplateLibrary } from "@/components/TemplateLibrary";
 import { FocusMode } from "@/components/FocusMode";
-import { ProjectCard } from "@/components/ProjectCard";
-import { Plus, Target, Rocket, Brain } from "lucide-react";
+import { StatsCards } from "@/components/StatsCards";
+import { ProjectsGrid } from "@/components/ProjectsGrid";
+import { Plus, Brain } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-export interface Project {
-  id: string;
-  title: string;
-  type: "web-app" | "extension" | "mobile";
-  status: "ideation" | "in-progress" | "ready-to-launch" | "launched";
-  progress: number;
-  phases: Phase[];
-  createdAt: Date;
-  template?: string;
-}
-
-export interface Phase {
-  id: string;
-  name: string;
-  completed: boolean;
-  tasks: string[];
-  subtasks: string[];
-  automationTrigger?: string;
-  description?: string;
-}
-
-const PHASES = [
-  {
-    name: "Ideation",
-    description: "Generate and refine product concepts",
-    subtasks: [
-      "Brainstorm product ideas based on personal pain points",
-      "Research existing solutions and identify gaps",
-      "Define core problem statement",
-      "Validate idea with target audience feedback"
-    ]
-  },
-  {
-    name: "Problem & User Discovery",
-    description: "Deep dive into user problems and market research",
-    subtasks: [
-      "Conduct user interviews (5-10 potential users)",
-      "Create user personas and journey maps",
-      "Analyze competitor landscape and positioning",
-      "Document pain points and user stories"
-    ]
-  },
-  {
-    name: "Validation & Positioning",
-    description: "Validate market demand and positioning strategy",
-    subtasks: [
-      "Create landing page or MVP concept",
-      "Run validation experiments (surveys, pre-sales)",
-      "Define unique value proposition",
-      "Test messaging with target audience"
-    ]
-  },
-  {
-    name: "Product Strategy",
-    description: "Define product roadmap and business model",
-    subtasks: [
-      "Define MVP feature set and scope",
-      "Create product roadmap for 6 months",
-      "Determine pricing and business model",
-      "Set success metrics and KPIs"
-    ]
-  },
-  {
-    name: "Design & UX",
-    description: "Create user interface and experience design",
-    subtasks: [
-      "Create wireframes and user flow diagrams",
-      "Design UI mockups and prototypes",
-      "Conduct usability testing sessions",
-      "Finalize design system and components"
-    ]
-  },
-  {
-    name: "Build & Integrate",
-    description: "Develop the product and integrate systems",
-    subtasks: [
-      "Set up development environment and tools",
-      "Build core functionality and features",
-      "Integrate third-party services and APIs",
-      "Implement analytics and tracking"
-    ]
-  },
-  {
-    name: "Final QA + Founder Review",
-    description: "Quality assurance and final review process",
-    subtasks: [
-      "Conduct comprehensive testing (functionality, UX, performance)",
-      "Fix critical bugs and polish user experience",
-      "Founder final review and approval",
-      "Prepare launch assets and documentation"
-    ]
-  },
-  {
-    name: "Launch Setup & Execution",
-    description: "Execute product launch strategy",
-    subtasks: [
-      "Set up analytics and monitoring tools",
-      "Create launch announcement content",
-      "Submit to relevant platforms (App Store, Chrome Web Store, etc.)",
-      "Execute launch day communications"
-    ],
-    automationTrigger: "launch-announcement"
-  },
-  {
-    name: "Automated Marketing & Sales",
-    description: "Implement marketing automation and sales processes",
-    subtasks: [
-      "Set up email marketing sequences",
-      "Create social media content calendar",
-      "Implement conversion tracking and optimization",
-      "Launch paid acquisition campaigns"
-    ],
-    automationTrigger: "content-automation"
-  },
-  {
-    name: "SOP Creation + Systemization",
-    description: "Document processes and create standard operating procedures",
-    subtasks: [
-      "Document all processes and workflows",
-      "Create templates for future products",
-      "Set up delegation frameworks",
-      "Build knowledge base and documentation"
-    ]
-  },
-  {
-    name: "Post-Launch Feedback Loop",
-    description: "Analyze usage, testimonials, and support tickets",
-    subtasks: [
-      "Collect and analyze user feedback",
-      "Monitor usage analytics and user behavior",
-      "Review support tickets and common issues",
-      "Plan improvements for version 2"
-    ]
-  },
-  {
-    name: "Growth Experiments",
-    description: "Run weekly growth sprints (SEO, affiliates, collaborations)",
-    subtasks: [
-      "Implement SEO optimization strategies",
-      "Set up affiliate and referral programs",
-      "Execute partnership and collaboration outreach",
-      "Run conversion rate optimization experiments"
-    ]
-  },
-  {
-    name: "Founder Reflection & Energy Reset",
-    description: "Track mood, burnout, energy. Celebrate wins.",
-    subtasks: [
-      "Conduct founder energy and burnout assessment",
-      "Celebrate wins and document lessons learned",
-      "Plan next product or improvement cycle",
-      "Reset and prepare for next iteration"
-    ]
-  }
-];
+import { PHASES } from "@/constants/phases";
+import { Project } from "@/types";
 
 const Index = () => {
   const { toast } = useToast();
@@ -264,10 +108,6 @@ const Index = () => {
     }
   };
 
-  const totalProjects = projects.length;
-  const launchedProjects = projects.filter(p => p.status === "launched").length;
-  const averageProgress = projects.reduce((sum, p) => sum + p.progress, 0) / totalProjects;
-
   if (focusMode) {
     return <FocusMode projects={projects} onExit={() => setFocusMode(false)} />;
   }
@@ -300,41 +140,7 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-                <Target className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalProjects}</div>
-                <p className="text-xs text-muted-foreground">Active in pipeline</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Launched</CardTitle>
-                <Rocket className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{launchedProjects}</div>
-                <p className="text-xs text-muted-foreground">Products in market</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg Progress</CardTitle>
-                <div className="h-4 w-4 rounded-full bg-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{Math.round(averageProgress)}%</div>
-                <Progress value={averageProgress} className="mt-2" />
-              </CardContent>
-            </Card>
-          </div>
+          <StatsCards projects={projects} />
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -345,16 +151,11 @@ const Index = () => {
           </TabsList>
           
           <TabsContent value="dashboard" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {projects.map((project) => (
-                <ProjectCard 
-                  key={project.id} 
-                  project={project} 
-                  onUpdate={updateProject}
-                  onClone={cloneProject}
-                />
-              ))}
-            </div>
+            <ProjectsGrid 
+              projects={projects}
+              onUpdate={updateProject}
+              onClone={cloneProject}
+            />
           </TabsContent>
           
           <TabsContent value="kanban">
