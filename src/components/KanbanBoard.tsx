@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
-import { Project } from "@/pages/Index";
+import { Project } from "@/types";
 import { cn } from "@/lib/utils";
 
 interface KanbanBoardProps {
