@@ -8,6 +8,11 @@ export interface Project {
   phases: Phase[];
   createdAt: Date;
   template?: string;
+  purpose?: string;
+  keyTasks?: string[];
+  timeline?: string;
+  tags?: string[];
+  voiceNotes?: string;
 }
 
 export interface Phase {

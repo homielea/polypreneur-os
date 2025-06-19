@@ -7,6 +7,7 @@ import { TemplateLibrary } from "@/components/TemplateLibrary";
 import { FocusMode } from "@/components/FocusMode";
 import { StatsCards } from "@/components/StatsCards";
 import { ProjectsGrid } from "@/components/ProjectsGrid";
+import { VoiceProjectCreator } from "@/components/VoiceProjectCreator";
 import { Plus, Brain } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/constants/phases";
@@ -82,6 +83,14 @@ const Index = () => {
     });
   };
 
+  const addVoiceProject = (project: Project) => {
+    setProjects([...projects, project]);
+    toast({
+      title: "Voice Project Created",
+      description: `"${project.title}" added to your dashboard`
+    });
+  };
+
   const updateProject = (updatedProject: Project) => {
     setProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
   };
@@ -130,6 +139,7 @@ const Index = () => {
                 <Brain className="w-4 h-4" />
                 Focus Mode
               </Button>
+              <VoiceProjectCreator onCreateProject={addVoiceProject} />
               <Button 
                 onClick={() => addProject()}
                 className="flex items-center gap-2"
