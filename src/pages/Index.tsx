@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,16 +7,19 @@ import { FocusMode } from "@/components/FocusMode";
 import { StatsCards } from "@/components/StatsCards";
 import { ProjectsGrid } from "@/components/ProjectsGrid";
 import { VoiceProjectCreator } from "@/components/VoiceProjectCreator";
-import { Plus, Brain } from "lucide-react";
+import { IdeaVaultWizard } from "@/components/IdeaVaultWizard";
+import { IdeaVaultGrid } from "@/components/IdeaVaultGrid";
+import { Plus, Brain, Lightbulb } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/constants/phases";
-import { Project } from "@/types";
+import { Project, IdeaData } from "@/types";
 
 const Index = () => {
   const { toast } = useToast();
   const [focusMode, setFocusMode] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [projects, setProjects] = useState<Project[]>([
+  const [showIdeaWizard, setShowIdeaWizard] = useState(false);
+  const [ideas, setIdeas] = useState<IdeaData[]>([
     {
       id: "1",
       title: "AI Email Assistant",
@@ -117,6 +119,45 @@ const Index = () => {
     }
   };
 
+  const addIdea = (idea: IdeaData) => {
+    setIdeas([...ideas, idea]);
+  };
+
+  const updateIdea = (updatedIdea: IdeaData) => {
+    setIdeas(ideas.map(idea => idea.id === updatedIdea.id ? updatedIdea : idea));
+  };
+
+  const convertIdeaToProject = (idea: IdeaData) => {
+    const newProject: Project = {
+      id: Date.now().toString(),
+      title: idea.title,
+      type: "web-app", // Default, can be customized
+      status: "ideation",
+      progress: 0,
+      phases: PHASES.map((phase, index) => ({
+        id: `${index}`,
+        name: phase.name,
+        completed: false,
+        tasks: [`Complete ${phase.name.toLowerCase()} tasks`],
+        subtasks: phase.subtasks,
+        description: phase.description,
+        automationTrigger: phase.automationTrigger
+      })),
+      createdAt: new Date(),
+      purpose: idea.problemItSolves,
+      keyTasks: [idea.nextStep],
+      tags: [idea.category]
+    };
+
+    setProjects([...projects, newProject]);
+    updateIdea({ ...idea, status: "converted" });
+    
+    toast({
+      title: "Idea Converted!",
+      description: `"${idea.title}" is now a project in your dashboard`
+    });
+  };
+
   if (focusMode) {
     return <FocusMode projects={projects} onExit={() => setFocusMode(false)} />;
   }
@@ -156,8 +197,9 @@ const Index = () => {
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="ideas">Idea Vault</TabsTrigger>
             <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
             <TabsTrigger value="templates">Template Library</TabsTrigger>
           </TabsList>
@@ -167,6 +209,25 @@ const Index = () => {
               projects={projects}
               onUpdate={updateProject}
               onClone={cloneProject}
+            />
+          </TabsContent>
+
+          <TabsContent value="ideas" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Idea Vault</h2>
+                <p className="text-gray-600">Capture, score, and prioritize your ideas</p>
+              </div>
+              <Button onClick={() => setShowIdeaWizard(true)}>
+                <Lightbulb className="w-4 h-4 mr-2" />
+                New Idea
+              </Button>
+            </div>
+            
+            <IdeaVaultGrid 
+              ideas={ideas}
+              onConvertToProject={convertIdeaToProject}
+              onUpdateIdea={updateIdea}
             />
           </TabsContent>
           
@@ -182,6 +243,16 @@ const Index = () => {
             <TemplateLibrary onCreateProject={addProject} />
           </TabsContent>
         </Tabs>
+
+        {/* Idea Wizard Modal */}
+        {showIdeaWizard && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <IdeaVaultWizard 
+              onSaveIdea={addIdea}
+              onClose={() => setShowIdeaWizard(false)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
