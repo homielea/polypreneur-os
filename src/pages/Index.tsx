@@ -125,16 +125,17 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Polypreneur-OS</h1>
-              <p className="text-lg text-gray-600">Launch digital products with repeatable systems</p>
+          <div className="flex flex-col gap-4 mb-4 md:flex-row md:justify-between md:items-center">
+            <div className="text-center md:text-left">
+              <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">Polypreneur-OS</h1>
+              <p className="text-base md:text-lg text-gray-600">Launch digital products with repeatable systems</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-3 items-stretch sm:items-center">
               <Button 
                 onClick={() => setFocusMode(true)}
                 variant="outline"
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2"
+                size="sm"
               >
                 <Brain className="w-4 h-4" />
                 Focus Mode
@@ -142,7 +143,8 @@ const Index = () => {
               <VoiceProjectCreator onCreateProject={addVoiceProject} />
               <Button 
                 onClick={() => addProject()}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2"
+                size="sm"
               >
                 <Plus className="w-4 h-4" />
                 New Project
