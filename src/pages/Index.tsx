@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,7 +20,8 @@ const Index = () => {
   const [focusMode, setFocusMode] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showIdeaWizard, setShowIdeaWizard] = useState(false);
-  const [ideas, setIdeas] = useState<IdeaData[]>([
+  
+  const [projects, setProjects] = useState<Project[]>([
     {
       id: "1",
       title: "AI Email Assistant",
@@ -57,6 +59,8 @@ const Index = () => {
       template: "extension-template"
     }
   ]);
+
+  const [ideas, setIdeas] = useState<IdeaData[]>([]);
 
   const addProject = (template?: string) => {
     const newProject: Project = {

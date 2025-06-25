@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +23,7 @@ export const IdeaVaultWizard = ({ onSaveIdea, onClose }: IdeaVaultWizardProps) =
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "",
+    category: "" as "" | "saas" | "coaching" | "content" | "physical" | "service",
     targetAudience: "",
     problemItSolves: ""
   });
@@ -71,7 +70,7 @@ export const IdeaVaultWizard = ({ onSaveIdea, onClose }: IdeaVaultWizardProps) =
       id: Date.now().toString(),
       title: formData.title,
       description: formData.description,
-      category: formData.category as any,
+      category: formData.category as "saas" | "coaching" | "content" | "physical" | "service",
       targetAudience: formData.targetAudience,
       problemItSolves: formData.problemItSolves,
       pmfScore: scores.pmfScore,
