@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KanbanBoard } from "@/components/KanbanBoard";
@@ -10,16 +9,40 @@ import { ProjectsGrid } from "@/components/ProjectsGrid";
 import { VoiceProjectCreator } from "@/components/VoiceProjectCreator";
 import { IdeaVaultWizard } from "@/components/IdeaVaultWizard";
 import { IdeaVaultGrid } from "@/components/IdeaVaultGrid";
-import { Plus, Brain, Lightbulb } from "lucide-react";
+import { DashboardSummary } from "@/components/DashboardSummary";
+import { DailyCheckIn } from "@/components/DailyCheckIn";
+import { OnboardingWizard } from "@/components/OnboardingWizard";
+import { Plus, Brain, Lightbulb, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/constants/phases";
 import { Project, IdeaData } from "@/types";
+
+interface UserProfile {
+  name: string;
+  role: string;
+  goals: string[];
+  experience: "beginner" | "intermediate" | "advanced";
+  interests: string[];
+}
+
+interface DailyCheckInData {
+  date: string;
+  mood: "high" | "medium" | "low";
+  energy: "high" | "medium" | "low";
+  focus: string;
+  reflection: string;
+  completed: boolean;
+}
 
 const Index = () => {
   const { toast } = useToast();
   const [focusMode, setFocusMode] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showIdeaWizard, setShowIdeaWizard] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showDailyCheckIn, setShowDailyCheckIn] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [dailyCheckIn, setDailyCheckIn] = useState<DailyCheckInData | null>(null);
   
   const [projects, setProjects] = useState<Project[]>([
     {
@@ -61,6 +84,41 @@ const Index = () => {
   ]);
 
   const [ideas, setIdeas] = useState<IdeaData[]>([]);
+
+  // Check if user should see onboarding or daily check-in
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('polypreneur-profile');
+    const todayCheckIn = localStorage.getItem(`checkin-${new Date().toISOString().split('T')[0]}`);
+    
+    if (!savedProfile) {
+      setShowOnboarding(true);
+    } else {
+      setUserProfile(JSON.parse(savedProfile));
+      if (!todayCheckIn) {
+        setShowDailyCheckIn(true);
+      } else {
+        setDailyCheckIn(JSON.parse(todayCheckIn));
+      }
+    }
+  }, []);
+
+  const handleOnboardingComplete = (profile: UserProfile) => {
+    setUserProfile(profile);
+    localStorage.setItem('polypreneur-profile', JSON.stringify(profile));
+    setShowOnboarding(false);
+    setShowDailyCheckIn(true);
+    
+    toast({
+      title: `Welcome, ${profile.name}!`,
+      description: "Your Polypreneur journey begins now."
+    });
+  };
+
+  const handleDailyCheckInComplete = (checkIn: DailyCheckInData) => {
+    setDailyCheckIn(checkIn);
+    localStorage.setItem(`checkin-${checkIn.date}`, JSON.stringify(checkIn));
+    setShowDailyCheckIn(false);
+  };
 
   const addProject = (template?: string) => {
     const newProject: Project = {
@@ -172,10 +230,28 @@ const Index = () => {
         <header className="mb-8">
           <div className="flex flex-col gap-4 mb-4 md:flex-row md:justify-between md:items-center">
             <div className="text-center md:text-left">
-              <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">Polypreneur-OS</h1>
+              <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">
+                Polypreneur OS
+                {userProfile && (
+                  <span className="text-lg md:text-xl font-normal text-gray-600 ml-2">
+                    - Welcome back, {userProfile.name}!
+                  </span>
+                )}
+              </h1>
               <p className="text-base md:text-lg text-gray-600">Launch digital products with repeatable systems</p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:gap-3 items-stretch sm:items-center">
+              {!dailyCheckIn && (
+                <Button 
+                  onClick={() => setShowDailyCheckIn(true)}
+                  variant="outline"
+                  className="flex items-center justify-center gap-2"
+                  size="sm"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Daily Check-in
+                </Button>
+              )}
               <Button 
                 onClick={() => setFocusMode(true)}
                 variant="outline"
@@ -196,8 +272,6 @@ const Index = () => {
               </Button>
             </div>
           </div>
-
-          <StatsCards projects={projects} />
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -209,6 +283,7 @@ const Index = () => {
           </TabsList>
           
           <TabsContent value="dashboard" className="space-y-6">
+            <DashboardSummary projects={projects} ideas={ideas} />
             <ProjectsGrid 
               projects={projects}
               onUpdate={updateProject}
@@ -248,7 +323,22 @@ const Index = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Idea Wizard Modal */}
+        {/* Modals */}
+        {showOnboarding && (
+          <OnboardingWizard 
+            onComplete={handleOnboardingComplete}
+            onSkip={() => setShowOnboarding(false)}
+          />
+        )}
+
+        {showDailyCheckIn && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <DailyCheckIn 
+              onComplete={handleDailyCheckInComplete}
+            />
+          </div>
+        )}
+
         {showIdeaWizard && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <IdeaVaultWizard 

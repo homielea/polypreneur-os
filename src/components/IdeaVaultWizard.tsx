@@ -23,7 +23,7 @@ export const IdeaVaultWizard = ({ onSaveIdea, onClose }: IdeaVaultWizardProps) =
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "" as "" | "saas" | "coaching" | "content" | "physical" | "service",
+    category: "" as "saas" | "coaching" | "content" | "physical" | "service" | "",
     targetAudience: "",
     problemItSolves: ""
   });
@@ -47,9 +47,21 @@ export const IdeaVaultWizard = ({ onSaveIdea, onClose }: IdeaVaultWizardProps) =
   };
 
   const handleScoreIdea = async () => {
+    if (!formData.category) {
+      toast({
+        title: "Category Required",
+        description: "Please select a category before scoring your idea.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsScoring(true);
     try {
-      const result = await scoreIdea(formData);
+      const result = await scoreIdea({
+        ...formData,
+        category: formData.category as "saas" | "coaching" | "content" | "physical" | "service"
+      });
       setScores(result);
       setCurrentStep(4);
     } catch (error) {
@@ -64,7 +76,7 @@ export const IdeaVaultWizard = ({ onSaveIdea, onClose }: IdeaVaultWizardProps) =
   };
 
   const handleSaveIdea = () => {
-    if (!scores) return;
+    if (!scores || !formData.category) return;
 
     const newIdea: IdeaData = {
       id: Date.now().toString(),
