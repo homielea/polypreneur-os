@@ -12,6 +12,7 @@ import { IdeaVaultGrid } from "@/components/IdeaVaultGrid";
 import { DashboardSummary } from "@/components/DashboardSummary";
 import { DailyCheckIn } from "@/components/DailyCheckIn";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
+import { AIAssistantPanel } from "@/components/AIAssistantPanel";
 import { Plus, Brain, Lightbulb, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/constants/phases";
@@ -283,12 +284,37 @@ const Index = () => {
           </TabsList>
           
           <TabsContent value="dashboard" className="space-y-6">
-            <DashboardSummary projects={projects} ideas={ideas} />
-            <ProjectsGrid 
-              projects={projects}
-              onUpdate={updateProject}
-              onClone={cloneProject}
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <DashboardSummary projects={projects} ideas={ideas} />
+                <ProjectsGrid 
+                  projects={projects}
+                  onUpdate={updateProject}
+                  onClone={cloneProject}
+                />
+              </div>
+              
+              {/* AI Assistant Panel */}
+              {dailyCheckIn && (
+                <div className="lg:col-span-1">
+                  <AIAssistantPanel
+                    projects={projects}
+                    ideas={ideas}
+                    userContext={{
+                      mood: dailyCheckIn.mood,
+                      energy: dailyCheckIn.energy,
+                      focus: dailyCheckIn.focus,
+                      profile: userProfile ? {
+                        experience: userProfile.experience,
+                        goals: userProfile.goals,
+                        interests: userProfile.interests
+                      } : undefined
+                    }}
+                    className="sticky top-4"
+                  />
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="ideas" className="space-y-6">
