@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KanbanBoard } from "@/components/KanbanBoard";
@@ -11,12 +11,15 @@ import { IdeaVaultWizard } from "@/components/IdeaVaultWizard";
 import { IdeaVaultGrid } from "@/components/IdeaVaultGrid";
 import { DashboardSummary } from "@/components/DashboardSummary";
 import { DailyCheckIn } from "@/components/DailyCheckIn";
+import { EveningReflection } from "@/components/EveningReflection";
+import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { AIAssistantPanel } from "@/components/AIAssistantPanel";
 import { Plus, Brain, Lightbulb, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/constants/phases";
 import { Project, IdeaData } from "@/types";
+import { MoodProductivityAnalyzer } from "@/utils/moodProductivityAnalyzer";
 
 interface UserProfile {
   name: string;
@@ -32,6 +35,18 @@ interface DailyCheckInData {
   energy: "high" | "medium" | "low";
   focus: string;
   reflection: string;
+  completed: boolean;
+}
+
+interface EveningReflectionData {
+  date: string;
+  tasksCompleted: number;
+  focusAchieved: number;
+  energyUsed: number;
+  accomplishments: string;
+  challenges: string;
+  tomorrowPriority: string;
+  satisfactionLevel: number;
   completed: boolean;
 }
 
@@ -85,6 +100,17 @@ const Index = () => {
   ]);
 
   const [ideas, setIdeas] = useState<IdeaData[]>([]);
+  
+  const [showEveningReflection, setShowEveningReflection] = useState(false);
+  const [eveningReflections, setEveningReflections] = useState<EveningReflectionData[]>([]);
+
+  // Load evening reflections from localStorage
+  useEffect(() => {
+    const savedReflections = localStorage.getItem('evening-reflections');
+    if (savedReflections) {
+      setEveningReflections(JSON.parse(savedReflections));
+    }
+  }, []);
 
   // Check if user should see onboarding or daily check-in
   useEffect(() => {
@@ -102,6 +128,20 @@ const Index = () => {
       }
     }
   }, []);
+
+  // Check if evening reflection is needed
+  useEffect(() => {
+    if (dailyCheckIn) {
+      const today = new Date().toISOString().split('T')[0];
+      const todayReflection = eveningReflections.find(r => r.date === today);
+      const currentHour = new Date().getHours();
+      
+      // Show evening reflection after 6 PM if not completed
+      if (currentHour >= 18 && !todayReflection) {
+        setShowEveningReflection(true);
+      }
+    }
+  }, [dailyCheckIn, eveningReflections]);
 
   const handleOnboardingComplete = (profile: UserProfile) => {
     setUserProfile(profile);
@@ -221,6 +261,39 @@ const Index = () => {
     });
   };
 
+  const handleEveningReflectionComplete = (reflection: EveningReflectionData) => {
+    const updatedReflections = [...eveningReflections, reflection];
+    setEveningReflections(updatedReflections);
+    localStorage.setItem('evening-reflections', JSON.stringify(updatedReflections));
+    setShowEveningReflection(false);
+    
+    toast({
+      title: "Evening reflection saved!",
+      description: "Great job wrapping up your day thoughtfully."
+    });
+  };
+
+  // Enhanced user context with productivity patterns
+  const enhancedUserContext = useMemo(() => {
+    if (!dailyCheckIn) return null;
+
+    const checkIns = dailyCheckIn ? [dailyCheckIn] : []; // This would be an array in real implementation
+    const productivityPattern = eveningReflections.length > 2 ? 
+      MoodProductivityAnalyzer.analyzePatterns(checkIns, eveningReflections) : undefined;
+
+    return {
+      mood: dailyCheckIn.mood,
+      energy: dailyCheckIn.energy,
+      focus: dailyCheckIn.focus,
+      profile: userProfile ? {
+        experience: userProfile.experience,
+        goals: userProfile.goals,
+        interests: userProfile.interests
+      } : undefined,
+      productivityPattern
+    };
+  }, [dailyCheckIn, userProfile, eveningReflections]);
+
   if (focusMode) {
     return <FocusMode projects={projects} onExit={() => setFocusMode(false)} />;
   }
@@ -276,8 +349,9 @@ const Index = () => {
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="ideas">Idea Vault</TabsTrigger>
             <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
             <TabsTrigger value="templates">Template Library</TabsTrigger>
@@ -295,26 +369,29 @@ const Index = () => {
               </div>
               
               {/* AI Assistant Panel */}
-              {dailyCheckIn && (
+              {dailyCheckIn && enhancedUserContext && (
                 <div className="lg:col-span-1">
                   <AIAssistantPanel
                     projects={projects}
                     ideas={ideas}
-                    userContext={{
-                      mood: dailyCheckIn.mood,
-                      energy: dailyCheckIn.energy,
-                      focus: dailyCheckIn.focus,
-                      profile: userProfile ? {
-                        experience: userProfile.experience,
-                        goals: userProfile.goals,
-                        interests: userProfile.interests
-                      } : undefined
-                    }}
+                    userContext={enhancedUserContext}
                     className="sticky top-4"
                   />
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold">Analytics & Insights</h2>
+              <p className="text-gray-600">Track your mood, energy, and productivity patterns</p>
+            </div>
+            
+            <AnalyticsDashboard 
+              checkIns={dailyCheckIn ? [dailyCheckIn] : []}
+              reflections={eveningReflections}
+            />
           </TabsContent>
 
           <TabsContent value="ideas" className="space-y-6">
@@ -370,6 +447,15 @@ const Index = () => {
             <IdeaVaultWizard 
               onSaveIdea={addIdea}
               onClose={() => setShowIdeaWizard(false)}
+            />
+          </div>
+        )}
+        
+        {showEveningReflection && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <EveningReflection 
+              onComplete={handleEveningReflectionComplete}
+              dailyFocus={dailyCheckIn?.focus}
             />
           </div>
         )}

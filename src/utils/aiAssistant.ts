@@ -1,4 +1,5 @@
 import { Project, IdeaData } from "@/types";
+import { MoodProductivityAnalyzer, ProductivityPattern } from "./moodProductivityAnalyzer";
 
 export interface UserContext {
   mood: "high" | "medium" | "low";
@@ -9,6 +10,7 @@ export interface UserContext {
     goals: string[];
     interests: string[];
   };
+  productivityPattern?: ProductivityPattern;
 }
 
 export interface AIRecommendation {
@@ -34,24 +36,26 @@ export class AIAssistant {
     ideas: IdeaData[],
     userContext: UserContext
   ): SmartSuggestions {
-    const { mood, energy, focus, profile } = userContext;
+    const { mood, energy, focus, profile, productivityPattern } = userContext;
     
     // Analyze current state
     const activeProjects = projects.filter(p => p.status === "in-progress");
     const ideationProjects = projects.filter(p => p.status === "ideation");
     const highPriorityIdeas = ideas.filter(i => i.aiPriorityScore >= 7);
     
-    // Generate primary focus recommendation
-    const primaryFocus = this.getPrimaryFocus(activeProjects, ideas, mood, energy, focus);
+    // Generate primary focus recommendation (enhanced with productivity patterns)
+    const primaryFocus = this.getPrimaryFocusWithPattern(
+      activeProjects, ideas, mood, energy, focus, productivityPattern
+    );
     
-    // Generate secondary actions based on energy level
+    // Generate secondary actions based on energy level and patterns
     const secondaryActions = this.getSecondaryActions(projects, ideas, energy, mood);
     
-    // Generate insights based on patterns
-    const insights = this.generateInsights(projects, ideas, userContext);
+    // Generate insights based on patterns and productivity data
+    const insights = this.generateInsightsWithPattern(projects, ideas, userContext);
     
-    // Generate contextual tips
-    const tips = this.getContextualTips(userContext, projects.length, ideas.length);
+    // Generate contextual tips with productivity insights
+    const tips = this.getContextualTipsWithPattern(userContext, projects.length, ideas.length);
     
     return {
       primaryFocus,
@@ -61,13 +65,52 @@ export class AIAssistant {
     };
   }
 
-  private static getPrimaryFocus(
+  private static getPrimaryFocusWithPattern(
     activeProjects: Project[],
     ideas: IdeaData[],
     mood: string,
     energy: string,
-    focus: string
+    focus: string,
+    productivityPattern?: ProductivityPattern
   ): AIRecommendation {
+    // Use productivity pattern to optimize recommendations
+    if (productivityPattern) {
+      // If current mood/energy matches best pattern, recommend challenging work
+      if (mood === productivityPattern.bestMoodForProductivity && 
+          energy === productivityPattern.bestEnergyForFocus) {
+        const challengingProject = activeProjects.find(p => {
+          const nextPhase = p.phases.find(phase => !phase.completed);
+          return nextPhase && ["Development", "Launch", "Validation"].includes(nextPhase.name);
+        });
+        
+        if (challengingProject) {
+          return {
+            type: "project",
+            title: `Perfect state for challenging work: "${challengingProject.title}"`,
+            description: `Your mood and energy are in the optimal zone (based on your patterns). Tackle the hardest tasks now!`,
+            priority: "high",
+            actionable: true,
+            context: "Productivity pattern optimization",
+            suggestedAction: "Focus on complex development or validation tasks"
+          };
+        }
+      }
+
+      // If in suboptimal state, suggest lighter work
+      if (mood !== productivityPattern.bestMoodForProductivity || 
+          energy !== productivityPattern.bestEnergyForFocus) {
+        return {
+          type: "focus",
+          title: "Optimize for your current state",
+          description: `Based on your patterns, this isn't your peak productivity state. Focus on planning, organizing, or creative tasks.`,
+          priority: "medium",
+          actionable: true,
+          context: "Mood-energy state optimization",
+          suggestedAction: "Work on ideation, planning, or administrative tasks"
+        };
+      }
+    }
+
     // High energy + good mood = tackle challenging work
     if (energy === "high" && mood === "high") {
       const nextPhaseProject = activeProjects.find(p => {
@@ -189,7 +232,7 @@ export class AIAssistant {
     return actions.slice(0, 3); // Limit to 3 actions
   }
 
-  private static generateInsights(
+  private static generateInsightsWithPattern(
     projects: Project[],
     ideas: IdeaData[],
     userContext: UserContext
@@ -231,17 +274,56 @@ export class AIAssistant {
         suggestedAction: "Prioritize your top 2 projects"
       });
     }
+
+    // Add productivity pattern insights
+    if (userContext.productivityPattern) {
+      const pattern = userContext.productivityPattern;
+      
+      if (pattern.productivityTrend === "improving") {
+        insights.push({
+          type: "tip",
+          title: "📈 Productivity trending upward",
+          description: `You're completing ${pattern.averageTasksOnHighMood.toFixed(1)} tasks on good days vs ${pattern.averageTasksOnLowMood.toFixed(1)} on tough days. Keep building momentum!`,
+          priority: "low",
+          actionable: false,
+          context: "Productivity trend analysis"
+        });
+      }
+
+      if (pattern.focusCorrelation > 0.5) {
+        insights.push({
+          type: "tip",
+          title: "🎯 Strong mood-focus connection",
+          description: "Your mood and energy levels strongly predict your focus achievement. Prioritize self-care for better outcomes.",
+          priority: "medium",
+          actionable: true,
+          context: "Correlation analysis",
+          suggestedAction: "Plan mood/energy management as part of productivity strategy"
+        });
+      }
+
+      if (pattern.bestMoodForProductivity !== "high") {
+        insights.push({
+          type: "tip",
+          title: "🤔 Unique productivity pattern detected",
+          description: `Interestingly, you're most productive when mood is "${pattern.bestMoodForProductivity}". This might indicate you work well under certain types of pressure or focus.`,
+          priority: "low",
+          actionable: false,
+          context: "Pattern recognition"
+        });
+      }
+    }
     
     return insights;
   }
 
-  private static getContextualTips(
+  private static getContextualTipsWithPattern(
     userContext: UserContext,
     projectCount: number,
     ideaCount: number
   ): AIRecommendation[] {
     const tips: AIRecommendation[] = [];
-    const { mood, energy, profile } = userContext;
+    const { mood, energy, profile, productivityPattern } = userContext;
     
     // Energy-based tips
     if (energy === "low" && mood !== "low") {
@@ -280,8 +362,28 @@ export class AIAssistant {
         suggestedAction: "Schedule weekly idea review sessions"
       });
     }
+
+    // Add productivity pattern tips
+    if (productivityPattern) {
+      const moodProductivityRecs = MoodProductivityAnalyzer.getProductivityRecommendations(
+        mood, energy, productivityPattern
+      );
+      
+      moodProductivityRecs.forEach((rec, index) => {
+        if (index < 2) { // Limit to 2 recommendations
+          tips.push({
+            type: "tip",
+            title: "💡 Productivity insight",
+            description: rec,
+            priority: "medium",
+            actionable: true,
+            context: "Mood-productivity optimization"
+          });
+        }
+      });
+    }
     
-    return tips.slice(0, 2); // Limit to 2 tips
+    return tips.slice(0, 3); // Limit to 3 tips total
   }
 
   static getProjectNextAction(project: Project, userEnergy: string): string {
