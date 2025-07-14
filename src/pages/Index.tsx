@@ -15,11 +15,14 @@ import { EveningReflection } from "@/components/EveningReflection";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { AIAssistantPanel } from "@/components/AIAssistantPanel";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Plus, Brain, Lightbulb, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/constants/phases";
 import { Project, IdeaData } from "@/types";
 import { MoodProductivityAnalyzer } from "@/utils/moodProductivityAnalyzer";
+import { SAMPLE_PROJECTS, SAMPLE_IDEAS, SAMPLE_DAILY_CHECKINS, SAMPLE_EVENING_REFLECTIONS } from "@/data/sampleData";
 
 interface UserProfile {
   name: string;
@@ -52,6 +55,7 @@ interface EveningReflectionData {
 
 const Index = () => {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
   const [focusMode, setFocusMode] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showIdeaWizard, setShowIdeaWizard] = useState(false);
@@ -60,57 +64,58 @@ const Index = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [dailyCheckIn, setDailyCheckIn] = useState<DailyCheckInData | null>(null);
   
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: "1",
-      title: "AI Email Assistant",
-      type: "web-app",
-      status: "in-progress",
-      progress: 54,
-      phases: PHASES.map((phase, index) => ({
-        id: `${index}`,
-        name: phase.name,
-        completed: index < 7,
-        tasks: [`Complete ${phase.name.toLowerCase()} tasks`],
-        subtasks: phase.subtasks,
-        description: phase.description,
-        automationTrigger: phase.automationTrigger
-      })),
-      createdAt: new Date(),
-      template: "web-app-saas"
-    },
-    {
-      id: "2", 
-      title: "Chrome Productivity Extension",
-      type: "extension",
-      status: "ideation",
-      progress: 23,
-      phases: PHASES.map((phase, index) => ({
-        id: `${index}`,
-        name: phase.name,
-        completed: index < 3,
-        tasks: [`Complete ${phase.name.toLowerCase()} tasks`],
-        subtasks: phase.subtasks,
-        description: phase.description,
-        automationTrigger: phase.automationTrigger
-      })),
-      createdAt: new Date(),
-      template: "extension-template"
-    }
-  ]);
-
+  // Initialize projects with sample data if no existing projects
+  const [projects, setProjects] = useState<Project[]>([]);
   const [ideas, setIdeas] = useState<IdeaData[]>([]);
   
   const [showEveningReflection, setShowEveningReflection] = useState(false);
   const [eveningReflections, setEveningReflections] = useState<EveningReflectionData[]>([]);
 
-  // Load evening reflections from localStorage
+  // Load data with sample fallbacks
   useEffect(() => {
-    const savedReflections = localStorage.getItem('evening-reflections');
-    if (savedReflections) {
-      setEveningReflections(JSON.parse(savedReflections));
+    try {
+      setLoading(true);
+      
+      // Load projects
+      const savedProjects = localStorage.getItem('polypreneur-projects');
+      if (savedProjects) {
+        setProjects(JSON.parse(savedProjects));
+      } else {
+        // Use sample data for new users
+        setProjects(SAMPLE_PROJECTS);
+        localStorage.setItem('polypreneur-projects', JSON.stringify(SAMPLE_PROJECTS));
+      }
+
+      // Load ideas
+      const savedIdeas = localStorage.getItem('polypreneur-ideas');
+      if (savedIdeas) {
+        setIdeas(JSON.parse(savedIdeas));
+      } else {
+        // Use sample data for new users
+        setIdeas(SAMPLE_IDEAS);
+        localStorage.setItem('polypreneur-ideas', JSON.stringify(SAMPLE_IDEAS));
+      }
+
+      // Load evening reflections
+      const savedReflections = localStorage.getItem('evening-reflections');
+      if (savedReflections) {
+        setEveningReflections(JSON.parse(savedReflections));
+      } else {
+        // Use sample data for new users
+        setEveningReflections(SAMPLE_EVENING_REFLECTIONS);
+        localStorage.setItem('evening-reflections', JSON.stringify(SAMPLE_EVENING_REFLECTIONS));
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: "Error loading data",
+        description: "Some data couldn't be loaded. Using default values.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   // Check if user should see onboarding or daily check-in
   useEffect(() => {
@@ -161,6 +166,21 @@ const Index = () => {
     setShowDailyCheckIn(false);
   };
 
+  // Update project saving
+  const updateProjects = (newProjects: Project[]) => {
+    setProjects(newProjects);
+    try {
+      localStorage.setItem('polypreneur-projects', JSON.stringify(newProjects));
+    } catch (error) {
+      console.error('Error saving projects:', error);
+      toast({
+        title: "Save Error",
+        description: "Couldn't save project changes",
+        variant: "destructive"
+      });
+    }
+  };
+
   const addProject = (template?: string) => {
     const newProject: Project = {
       id: Date.now().toString(),
@@ -181,7 +201,7 @@ const Index = () => {
       template
     };
     
-    setProjects([...projects, newProject]);
+    updateProjects([...projects, newProject]);
     toast({
       title: "Project Created",
       description: "New project added to your dashboard"
@@ -189,7 +209,7 @@ const Index = () => {
   };
 
   const addVoiceProject = (project: Project) => {
-    setProjects([...projects, project]);
+    updateProjects([...projects, project]);
     toast({
       title: "Voice Project Created",
       description: `"${project.title}" added to your dashboard`
@@ -197,7 +217,7 @@ const Index = () => {
   };
 
   const updateProject = (updatedProject: Project) => {
-    setProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
+    updateProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
   };
 
   const cloneProject = (projectId: string) => {
@@ -214,7 +234,7 @@ const Index = () => {
         })),
         createdAt: new Date()
       };
-      setProjects([...projects, clonedProject]);
+      updateProjects([...projects, clonedProject]);
       toast({
         title: "Project Cloned",
         description: "Project template copied successfully"
@@ -222,12 +242,27 @@ const Index = () => {
     }
   };
 
+  // Update idea saving
+  const updateIdeas = (newIdeas: IdeaData[]) => {
+    setIdeas(newIdeas);
+    try {
+      localStorage.setItem('polypreneur-ideas', JSON.stringify(newIdeas));
+    } catch (error) {
+      console.error('Error saving ideas:', error);
+      toast({
+        title: "Save Error",
+        description: "Couldn't save idea changes",
+        variant: "destructive"
+      });
+    }
+  };
+
   const addIdea = (idea: IdeaData) => {
-    setIdeas([...ideas, idea]);
+    updateIdeas([...ideas, idea]);
   };
 
   const updateIdea = (updatedIdea: IdeaData) => {
-    setIdeas(ideas.map(idea => idea.id === updatedIdea.id ? updatedIdea : idea));
+    updateIdeas(ideas.map(idea => idea.id === updatedIdea.id ? updatedIdea : idea));
   };
 
   const convertIdeaToProject = (idea: IdeaData) => {
@@ -252,7 +287,7 @@ const Index = () => {
       tags: [idea.category]
     };
 
-    setProjects([...projects, newProject]);
+    updateProjects([...projects, newProject]);
     updateIdea({ ...idea, status: "converted" });
     
     toast({
@@ -294,173 +329,190 @@ const Index = () => {
     };
   }, [dailyCheckIn, userProfile, eveningReflections]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading your dashboard..." />
+      </div>
+    );
+  }
+
   if (focusMode) {
-    return <FocusMode projects={projects} onExit={() => setFocusMode(false)} />;
+    return (
+      <ErrorBoundary>
+        <FocusMode projects={projects} onExit={() => setFocusMode(false)} />
+      </ErrorBoundary>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-7xl mx-auto">
-        <header className="mb-8">
-          <div className="flex flex-col gap-4 mb-4 md:flex-row md:justify-between md:items-center">
-            <div className="text-center md:text-left">
-              <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">
-                Polypreneur OS
-                {userProfile && (
-                  <span className="text-lg md:text-xl font-normal text-gray-600 ml-2">
-                    - Welcome back, {userProfile.name}!
-                  </span>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4">
+        <div className="max-w-7xl mx-auto">
+          <header className="mb-6 sm:mb-8">
+            <div className="flex flex-col gap-3 sm:gap-4 mb-4 md:flex-row md:justify-between md:items-center">
+              <div className="text-center md:text-left">
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
+                  Polypreneur OS
+                  {userProfile && (
+                    <span className="block sm:inline text-sm sm:text-lg md:text-xl font-normal text-gray-600 sm:ml-2 mt-1 sm:mt-0">
+                      - Welcome back, {userProfile.name}!
+                    </span>
+                  )}
+                </h1>
+                <p className="text-sm sm:text-base md:text-lg text-gray-600">Launch digital products with repeatable systems</p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-3 items-stretch sm:items-center">
+                {!dailyCheckIn && (
+                  <Button 
+                    onClick={() => setShowDailyCheckIn(true)}
+                    variant="outline"
+                    className="flex items-center justify-center gap-2"
+                    size="sm"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span className="hidden sm:inline">Daily Check-in</span>
+                    <span className="sm:hidden">Check-in</span>
+                  </Button>
                 )}
-              </h1>
-              <p className="text-base md:text-lg text-gray-600">Launch digital products with repeatable systems</p>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:gap-3 items-stretch sm:items-center">
-              {!dailyCheckIn && (
                 <Button 
-                  onClick={() => setShowDailyCheckIn(true)}
+                  onClick={() => setFocusMode(true)}
                   variant="outline"
                   className="flex items-center justify-center gap-2"
                   size="sm"
                 >
-                  <Calendar className="w-4 h-4" />
-                  Daily Check-in
+                  <Brain className="w-4 h-4" />
+                  <span className="hidden sm:inline">Focus Mode</span>
+                  <span className="sm:hidden">Focus</span>
                 </Button>
-              )}
-              <Button 
-                onClick={() => setFocusMode(true)}
-                variant="outline"
-                className="flex items-center justify-center gap-2"
-                size="sm"
-              >
-                <Brain className="w-4 h-4" />
-                Focus Mode
-              </Button>
-              <VoiceProjectCreator onCreateProject={addVoiceProject} />
-              <Button 
-                onClick={() => addProject()}
-                className="flex items-center justify-center gap-2"
-                size="sm"
-              >
-                <Plus className="w-4 h-4" />
-                New Project
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="ideas">Idea Vault</TabsTrigger>
-            <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
-            <TabsTrigger value="templates">Template Library</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="dashboard" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <DashboardSummary projects={projects} ideas={ideas} />
-                <ProjectsGrid 
-                  projects={projects}
-                  onUpdate={updateProject}
-                  onClone={cloneProject}
-                />
+                <VoiceProjectCreator onCreateProject={addVoiceProject} />
+                <Button 
+                  onClick={() => addProject()}
+                  className="flex items-center justify-center gap-2"
+                  size="sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">New Project</span>
+                  <span className="sm:hidden">New</span>
+                </Button>
               </div>
-              
-              {/* AI Assistant Panel */}
-              {dailyCheckIn && enhancedUserContext && (
-                <div className="lg:col-span-1">
-                  <AIAssistantPanel
+            </div>
+          </header>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-5 mb-6">
+              <TabsTrigger value="dashboard" className="text-xs sm:text-sm">Dashboard</TabsTrigger>
+              <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>
+              <TabsTrigger value="ideas" className="text-xs sm:text-sm">Ideas</TabsTrigger>
+              <TabsTrigger value="kanban" className="text-xs sm:text-sm">Kanban</TabsTrigger>
+              <TabsTrigger value="templates" className="text-xs sm:text-sm">Templates</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="dashboard" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                  <DashboardSummary projects={projects} ideas={ideas} />
+                  <ProjectsGrid 
                     projects={projects}
-                    ideas={ideas}
-                    userContext={enhancedUserContext}
-                    className="sticky top-4"
+                    onUpdate={updateProject}
+                    onClone={cloneProject}
                   />
                 </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold">Analytics & Insights</h2>
-              <p className="text-gray-600">Track your mood, energy, and productivity patterns</p>
-            </div>
-            
-            <AnalyticsDashboard 
-              checkIns={dailyCheckIn ? [dailyCheckIn] : []}
-              reflections={eveningReflections}
-            />
-          </TabsContent>
-
-          <TabsContent value="ideas" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold">Idea Vault</h2>
-                <p className="text-gray-600">Capture, score, and prioritize your ideas</p>
+                
+                {/* AI Assistant Panel */}
+                {dailyCheckIn && enhancedUserContext && (
+                  <div className="lg:col-span-1">
+                    <AIAssistantPanel
+                      projects={projects}
+                      ideas={ideas}
+                      userContext={enhancedUserContext}
+                      className="sticky top-4"
+                    />
+                  </div>
+                )}
               </div>
-              <Button onClick={() => setShowIdeaWizard(true)}>
-                <Lightbulb className="w-4 h-4 mr-2" />
-                New Idea
-              </Button>
-            </div>
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold">Analytics & Insights</h2>
+                <p className="text-gray-600">Track your mood, energy, and productivity patterns</p>
+              </div>
+              
+              <AnalyticsDashboard 
+                checkIns={dailyCheckIn ? [dailyCheckIn] : []}
+                reflections={eveningReflections}
+              />
+            </TabsContent>
+
+            <TabsContent value="ideas" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Idea Vault</h2>
+                  <p className="text-gray-600">Capture, score, and prioritize your ideas</p>
+                </div>
+                <Button onClick={() => setShowIdeaWizard(true)}>
+                  <Lightbulb className="w-4 h-4 mr-2" />
+                  New Idea
+                </Button>
+              </div>
+              
+              <IdeaVaultGrid 
+                ideas={ideas}
+                onConvertToProject={convertIdeaToProject}
+                onUpdateIdea={updateIdea}
+              />
+            </TabsContent>
             
-            <IdeaVaultGrid 
-              ideas={ideas}
-              onConvertToProject={convertIdeaToProject}
-              onUpdateIdea={updateIdea}
+            <TabsContent value="kanban">
+              <KanbanBoard 
+                projects={projects} 
+                onUpdateProject={updateProject}
+                onCloneProject={cloneProject}
+              />
+            </TabsContent>
+            
+            <TabsContent value="templates">
+              <TemplateLibrary onCreateProject={addProject} />
+            </TabsContent>
+          </Tabs>
+
+          {/* Modals */}
+          {showOnboarding && (
+            <OnboardingWizard 
+              onComplete={handleOnboardingComplete}
+              onSkip={() => setShowOnboarding(false)}
             />
-          </TabsContent>
+          )}
+
+          {showDailyCheckIn && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <DailyCheckIn 
+                onComplete={handleDailyCheckInComplete}
+              />
+            </div>
+          )}
+
+          {showIdeaWizard && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <IdeaVaultWizard 
+                onSaveIdea={addIdea}
+                onClose={() => setShowIdeaWizard(false)}
+              />
+            </div>
+          )}
           
-          <TabsContent value="kanban">
-            <KanbanBoard 
-              projects={projects} 
-              onUpdateProject={updateProject}
-              onCloneProject={cloneProject}
-            />
-          </TabsContent>
-          
-          <TabsContent value="templates">
-            <TemplateLibrary onCreateProject={addProject} />
-          </TabsContent>
-        </Tabs>
-
-        {/* Modals */}
-        {showOnboarding && (
-          <OnboardingWizard 
-            onComplete={handleOnboardingComplete}
-            onSkip={() => setShowOnboarding(false)}
-          />
-        )}
-
-        {showDailyCheckIn && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <DailyCheckIn 
-              onComplete={handleDailyCheckInComplete}
-            />
-          </div>
-        )}
-
-        {showIdeaWizard && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <IdeaVaultWizard 
-              onSaveIdea={addIdea}
-              onClose={() => setShowIdeaWizard(false)}
-            />
-          </div>
-        )}
-        
-        {showEveningReflection && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <EveningReflection 
-              onComplete={handleEveningReflectionComplete}
-              dailyFocus={dailyCheckIn?.focus}
-            />
-          </div>
-        )}
+          {showEveningReflection && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <EveningReflection 
+                onComplete={handleEveningReflectionComplete}
+                dailyFocus={dailyCheckIn?.focus}
+              />
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 };
 
