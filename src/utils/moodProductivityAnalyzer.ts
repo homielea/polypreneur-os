@@ -1,4 +1,3 @@
-
 interface DailyCheckInData {
   date: string;
   mood: "high" | "medium" | "low";
@@ -27,6 +26,11 @@ export interface ProductivityPattern {
   averageTasksOnLowMood: number;
   focusCorrelation: number;
   productivityTrend: "improving" | "declining" | "stable";
+  // Additional properties needed by AnalyticsDashboard
+  bestMoodDay: string;
+  averageMoodScore: number;
+  highEnergyDays: number;
+  averageProductivity: number;
 }
 
 export class MoodProductivityAnalyzer {
@@ -105,13 +109,42 @@ export class MoodProductivityAnalyzer {
       }
     }
 
+    // Calculate additional properties for dashboard
+    const averageMoodScore = this.average(combinedData.map(d => 
+      d.mood === "high" ? 3 : d.mood === "medium" ? 2 : 1
+    ));
+
+    const highEnergyDays = combinedData.filter(d => d.energy === "high").length;
+
+    const averageProductivity = this.average(combinedData.map(d => d.satisfactionLevel));
+
+    // Find the best day of the week for mood
+    const dayMoodMap = combinedData.reduce((acc, d) => {
+      const dayOfWeek = new Date(d.date).toLocaleDateString('en-US', { weekday: 'long' });
+      const moodScore = d.mood === "high" ? 3 : d.mood === "medium" ? 2 : 1;
+      
+      if (!acc[dayOfWeek]) {
+        acc[dayOfWeek] = [];
+      }
+      acc[dayOfWeek].push(moodScore);
+      return acc;
+    }, {} as Record<string, number[]>);
+
+    const bestMoodDay = Object.entries(dayMoodMap)
+      .map(([day, scores]) => ({ day, avgScore: this.average(scores) }))
+      .sort((a, b) => b.avgScore - a.avgScore)[0]?.day || "Monday";
+
     return {
       bestMoodForProductivity,
       bestEnergyForFocus,
       averageTasksOnHighMood: avgTasks.high,
       averageTasksOnLowMood: avgTasks.low,
       focusCorrelation,
-      productivityTrend
+      productivityTrend,
+      bestMoodDay,
+      averageMoodScore,
+      highEnergyDays,
+      averageProductivity
     };
   }
 
@@ -151,7 +184,11 @@ export class MoodProductivityAnalyzer {
       averageTasksOnHighMood: 0,
       averageTasksOnLowMood: 0,
       focusCorrelation: 0,
-      productivityTrend: "stable"
+      productivityTrend: "stable",
+      bestMoodDay: "Monday",
+      averageMoodScore: 2,
+      highEnergyDays: 0,
+      averageProductivity: 5
     };
   }
 
