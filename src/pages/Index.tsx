@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +17,9 @@ import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { AIAssistantPanel } from "@/components/AIAssistantPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { EnhancedLoadingSpinner } from "@/components/EnhancedLoadingSpinner";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import { TouchOptimizedButton } from "@/components/TouchOptimizedButton";
 import { Plus, Brain, Lightbulb, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/constants/phases";
@@ -332,7 +335,7 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Loading your dashboard..." />
+        <EnhancedLoadingSpinner size="xl" text="Loading your dashboard..." variant="dots" />
       </div>
     );
   }
@@ -347,12 +350,19 @@ const Index = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4">
+      <KeyboardShortcuts
+        onNewProject={() => addProject()}
+        onNewIdea={() => setShowIdeaWizard(true)}
+        onFocusMode={() => setFocusMode(true)}
+        onSearch={() => toast({ title: "Search", description: "Search functionality coming soon!" })}
+      />
+      
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4 animate-fade-in">
         <div className="max-w-7xl mx-auto">
           <header className="mb-6 sm:mb-8">
             <div className="flex flex-col gap-3 sm:gap-4 mb-4 md:flex-row md:justify-between md:items-center">
               <div className="text-center md:text-left">
-                <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2 animate-slide-up">
                   Polypreneur OS
                   {userProfile && (
                     <span className="block sm:inline text-sm sm:text-lg md:text-xl font-normal text-gray-600 sm:ml-2 mt-1 sm:mt-0">
@@ -360,11 +370,13 @@ const Index = () => {
                     </span>
                   )}
                 </h1>
-                <p className="text-sm sm:text-base md:text-lg text-gray-600">Launch digital products with repeatable systems</p>
+                <p className="text-sm sm:text-base md:text-lg text-gray-600 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                  Launch digital products with repeatable systems
+                </p>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:gap-3 items-stretch sm:items-center">
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-3 items-stretch sm:items-center animate-slide-up" style={{ animationDelay: '0.3s' }}>
                 {!dailyCheckIn && (
-                  <Button 
+                  <TouchOptimizedButton 
                     onClick={() => setShowDailyCheckIn(true)}
                     variant="outline"
                     className="flex items-center justify-center gap-2"
@@ -373,9 +385,9 @@ const Index = () => {
                     <Calendar className="w-4 h-4" />
                     <span className="hidden sm:inline">Daily Check-in</span>
                     <span className="sm:hidden">Check-in</span>
-                  </Button>
+                  </TouchOptimizedButton>
                 )}
-                <Button 
+                <TouchOptimizedButton 
                   onClick={() => setFocusMode(true)}
                   variant="outline"
                   className="flex items-center justify-center gap-2"
@@ -384,9 +396,9 @@ const Index = () => {
                   <Brain className="w-4 h-4" />
                   <span className="hidden sm:inline">Focus Mode</span>
                   <span className="sm:hidden">Focus</span>
-                </Button>
+                </TouchOptimizedButton>
                 <VoiceProjectCreator onCreateProject={addVoiceProject} />
-                <Button 
+                <TouchOptimizedButton 
                   onClick={() => addProject()}
                   className="flex items-center justify-center gap-2"
                   size="sm"
@@ -394,21 +406,21 @@ const Index = () => {
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">New Project</span>
                   <span className="sm:hidden">New</span>
-                </Button>
+                </TouchOptimizedButton>
               </div>
             </div>
           </header>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 mb-6">
-              <TabsTrigger value="dashboard" className="text-xs sm:text-sm">Dashboard</TabsTrigger>
-              <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>
-              <TabsTrigger value="ideas" className="text-xs sm:text-sm">Ideas</TabsTrigger>
-              <TabsTrigger value="kanban" className="text-xs sm:text-sm">Kanban</TabsTrigger>
-              <TabsTrigger value="templates" className="text-xs sm:text-sm">Templates</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+              <TabsTrigger value="dashboard" className="text-xs sm:text-sm transition-all duration-200 hover:bg-accent/50">Dashboard</TabsTrigger>
+              <TabsTrigger value="analytics" className="text-xs sm:text-sm transition-all duration-200 hover:bg-accent/50">Analytics</TabsTrigger>
+              <TabsTrigger value="ideas" className="text-xs sm:text-sm transition-all duration-200 hover:bg-accent/50">Ideas</TabsTrigger>
+              <TabsTrigger value="kanban" className="text-xs sm:text-sm transition-all duration-200 hover:bg-accent/50">Kanban</TabsTrigger>
+              <TabsTrigger value="templates" className="text-xs sm:text-sm transition-all duration-200 hover:bg-accent/50">Templates</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="dashboard" className="space-y-6">
+            <TabsContent value="dashboard" className="space-y-6 animate-fade-in">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                   <DashboardSummary projects={projects} ideas={ideas} />
@@ -426,15 +438,16 @@ const Index = () => {
                       projects={projects}
                       ideas={ideas}
                       userContext={enhancedUserContext}
-                      className="sticky top-4"
+                      className="sticky top-4 animate-fade-in"
+                      style={{ animationDelay: '0.6s' }}
                     />
                   </div>
                 )}
               </div>
             </TabsContent>
 
-            <TabsContent value="analytics" className="space-y-6">
-              <div>
+            <TabsContent value="analytics" className="space-y-6 animate-fade-in">
+              <div className="animate-slide-up">
                 <h2 className="text-2xl font-bold">Analytics & Insights</h2>
                 <p className="text-gray-600">Track your mood, energy, and productivity patterns</p>
               </div>
@@ -445,16 +458,16 @@ const Index = () => {
               />
             </TabsContent>
 
-            <TabsContent value="ideas" className="space-y-6">
-              <div className="flex justify-between items-center">
+            <TabsContent value="ideas" className="space-y-6 animate-fade-in">
+              <div className="flex justify-between items-center animate-slide-up">
                 <div>
                   <h2 className="text-2xl font-bold">Idea Vault</h2>
                   <p className="text-gray-600">Capture, score, and prioritize your ideas</p>
                 </div>
-                <Button onClick={() => setShowIdeaWizard(true)}>
+                <TouchOptimizedButton onClick={() => setShowIdeaWizard(true)}>
                   <Lightbulb className="w-4 h-4 mr-2" />
                   New Idea
-                </Button>
+                </TouchOptimizedButton>
               </div>
               
               <IdeaVaultGrid 
@@ -464,7 +477,7 @@ const Index = () => {
               />
             </TabsContent>
             
-            <TabsContent value="kanban">
+            <TabsContent value="kanban" className="animate-fade-in">
               <KanbanBoard 
                 projects={projects} 
                 onUpdateProject={updateProject}
@@ -472,42 +485,52 @@ const Index = () => {
               />
             </TabsContent>
             
-            <TabsContent value="templates">
+            <TabsContent value="templates" className="animate-fade-in">
               <TemplateLibrary onCreateProject={addProject} />
             </TabsContent>
           </Tabs>
 
-          {/* Modals */}
+          {/* Modals with enhanced animations */}
           {showOnboarding && (
-            <OnboardingWizard 
-              onComplete={handleOnboardingComplete}
-              onSkip={() => setShowOnboarding(false)}
-            />
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in">
+              <div className="animate-scale-in">
+                <OnboardingWizard 
+                  onComplete={handleOnboardingComplete}
+                  onSkip={() => setShowOnboarding(false)}
+                />
+              </div>
+            </div>
           )}
 
           {showDailyCheckIn && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <DailyCheckIn 
-                onComplete={handleDailyCheckInComplete}
-              />
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in">
+              <div className="animate-scale-in">
+                <DailyCheckIn 
+                  onComplete={handleDailyCheckInComplete}
+                />
+              </div>
             </div>
           )}
 
           {showIdeaWizard && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <IdeaVaultWizard 
-                onSaveIdea={addIdea}
-                onClose={() => setShowIdeaWizard(false)}
-              />
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in">
+              <div className="animate-scale-in">
+                <IdeaVaultWizard 
+                  onSaveIdea={addIdea}
+                  onClose={() => setShowIdeaWizard(false)}
+                />
+              </div>
             </div>
           )}
           
           {showEveningReflection && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <EveningReflection 
-                onComplete={handleEveningReflectionComplete}
-                dailyFocus={dailyCheckIn?.focus}
-              />
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in">
+              <div className="animate-scale-in">
+                <EveningReflection 
+                  onComplete={handleEveningReflectionComplete}
+                  dailyFocus={dailyCheckIn?.focus}
+                />
+              </div>
             </div>
           )}
         </div>
