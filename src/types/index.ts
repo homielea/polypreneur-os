@@ -1,3 +1,4 @@
+
 export interface Project {
   id: string;
   title: string;
@@ -39,4 +40,20 @@ export interface IdeaData {
   status: "idea" | "validated" | "killed" | "converted";
   nextStep: string;
   createdAt: Date;
+}
+
+export interface UserProfile {
+  name: string;
+  role: string;
+  goals: string[];
+  experience: "beginner" | "intermediate" | "advanced";
+  interests: string[];
+  mission?: string;
+  vision?: string;
+  antiVision?: string;
+  alignmentScores?: {
+    clarity: number;
+    energy: number;
+    confidence: number;
+  };
 }

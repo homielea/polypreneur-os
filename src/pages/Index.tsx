@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +14,7 @@ import { DailyCheckIn } from "@/components/DailyCheckIn";
 import { EveningReflection } from "@/components/EveningReflection";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
+import { FounderProfile } from "@/components/FounderProfile";
 import { AIAssistantPanel } from "@/components/AIAssistantPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { EnhancedLoadingSpinner } from "@/components/EnhancedLoadingSpinner";
@@ -23,17 +23,9 @@ import { TouchOptimizedButton } from "@/components/TouchOptimizedButton";
 import { Plus, Brain, Lightbulb, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/constants/phases";
-import { Project, IdeaData } from "@/types";
+import { Project, IdeaData, UserProfile } from "@/types";
 import { MoodProductivityAnalyzer } from "@/utils/moodProductivityAnalyzer";
 import { SAMPLE_PROJECTS, SAMPLE_IDEAS, SAMPLE_DAILY_CHECKINS, SAMPLE_EVENING_REFLECTIONS } from "@/data/sampleData";
-
-interface UserProfile {
-  name: string;
-  role: string;
-  goals: string[];
-  experience: "beginner" | "intermediate" | "advanced";
-  interests: string[];
-}
 
 interface DailyCheckInData {
   date: string;
@@ -160,6 +152,15 @@ const Index = () => {
     toast({
       title: `Welcome, ${profile.name}!`,
       description: "Your Polypreneur journey begins now."
+    });
+  };
+
+  const handleProfileUpdate = (updatedProfile: UserProfile) => {
+    setUserProfile(updatedProfile);
+    localStorage.setItem('polypreneur-profile', JSON.stringify(updatedProfile));
+    toast({
+      title: "Profile Updated",
+      description: "Your founder profile has been saved."
     });
   };
 
@@ -431,18 +432,25 @@ const Index = () => {
                   />
                 </div>
                 
-                {/* AI Assistant Panel */}
-                {dailyCheckIn && enhancedUserContext && (
-                  <div className="lg:col-span-1">
+                <div className="lg:col-span-1 space-y-6">
+                  {/* Founder Profile */}
+                  {userProfile && (
+                    <FounderProfile 
+                      profile={userProfile} 
+                      onUpdateProfile={handleProfileUpdate}
+                    />
+                  )}
+                  
+                  {/* AI Assistant Panel */}
+                  {dailyCheckIn && enhancedUserContext && (
                     <AIAssistantPanel
                       projects={projects}
                       ideas={ideas}
                       userContext={enhancedUserContext}
-                      className="sticky top-4 animate-fade-in"
-                      style={{ animationDelay: '0.6s' }}
+                      className="animate-fade-in"
                     />
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </TabsContent>
 

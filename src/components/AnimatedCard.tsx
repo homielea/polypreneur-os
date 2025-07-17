@@ -1,16 +1,16 @@
 
 import React, { useState } from "react";
-import { Card, CardProps } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-interface AnimatedCardProps extends CardProps {
+interface AnimatedCardProps extends React.HTMLAttributes<HTMLDivElement> {
   hoverEffect?: "lift" | "glow" | "scale" | "none";
   clickEffect?: boolean;
   loadingAnimation?: boolean;
 }
 
 export const AnimatedCard = React.forwardRef<HTMLDivElement, AnimatedCardProps>(
-  ({ className, hoverEffect = "lift", clickEffect = false, loadingAnimation = false, children, ...props }, ref) => {
+  ({ className, hoverEffect = "lift", clickEffect = false, loadingAnimation = false, children, onClick, ...props }, ref) => {
     const [isClicked, setIsClicked] = useState(false);
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -18,7 +18,7 @@ export const AnimatedCard = React.forwardRef<HTMLDivElement, AnimatedCardProps>(
         setIsClicked(true);
         setTimeout(() => setIsClicked(false), 150);
       }
-      props.onClick?.(e);
+      onClick?.(e);
     };
 
     const getHoverClasses = () => {
