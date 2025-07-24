@@ -95,10 +95,10 @@ export const ProjectCard = ({ project, onUpdate, onClone }: ProjectCardProps) =>
     <Card className="hover:shadow-lg transition-shadow duration-200">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.location.href = `/project/${project.id}`}>
             <span className="text-2xl">{getTypeIcon(project.type)}</span>
             <div>
-              <CardTitle className="text-lg">{project.title}</CardTitle>
+              <CardTitle className="text-lg hover:text-blue-600 transition-colors">{project.title}</CardTitle>
               <div className="flex items-center gap-2 mt-1">
                 <Badge className={cn("text-xs", getStatusColor(project.status))}>
                   {project.status.replace("-", " ")}
