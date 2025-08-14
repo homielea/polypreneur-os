@@ -8,6 +8,7 @@ import { Lightbulb, Rocket, Target, TrendingUp, Clock, Zap } from "lucide-react"
 interface DashboardSummaryProps {
   projects: Project[];
   ideas: IdeaData[];
+  onQuickAction?: (action: string) => void;
 }
 
 export const DashboardSummary = ({ projects, ideas }: DashboardSummaryProps) => {

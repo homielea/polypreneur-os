@@ -14,9 +14,10 @@ interface ProjectCardProps {
   project: Project;
   onUpdate: (project: Project) => void;
   onClone: (projectId: string) => void;
+  onDelete?: (projectId: string) => void;
 }
 
-export const ProjectCard = ({ project, onUpdate, onClone }: ProjectCardProps) => {
+export const ProjectCard = ({ project, onUpdate, onClone, onDelete }: ProjectCardProps) => {
   const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedPhases, setExpandedPhases] = useState<{ [key: string]: boolean }>({});

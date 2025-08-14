@@ -6,9 +6,10 @@ interface ProjectsGridProps {
   projects: Project[];
   onUpdate: (project: Project) => void;
   onClone: (projectId: string) => void;
+  onDelete?: (projectId: string) => void;
 }
 
-export const ProjectsGrid = ({ projects, onUpdate, onClone }: ProjectsGridProps) => {
+export const ProjectsGrid = ({ projects, onUpdate, onClone, onDelete }: ProjectsGridProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {projects.map((project) => (
@@ -17,6 +18,7 @@ export const ProjectsGrid = ({ projects, onUpdate, onClone }: ProjectsGridProps)
           project={project} 
           onUpdate={onUpdate}
           onClone={onClone}
+          onDelete={onDelete}
         />
       ))}
     </div>

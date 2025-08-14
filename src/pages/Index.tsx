@@ -4,17 +4,28 @@ import { DashboardSummary } from "@/components/DashboardSummary";
 import { ProjectsGrid } from "@/components/ProjectsGrid";
 import { IdeaVaultGrid } from "@/components/IdeaVaultGrid";
 import { IdeaVaultWizard } from "@/components/IdeaVaultWizard";
-import { ProjectTemplateLibrary } from "@/components/ProjectTemplateLibrary";
+import { TemplateLibrary } from "@/components/TemplateLibrary";
 import { FounderProfile } from "@/components/FounderProfile";
 import { FocusMode } from "@/components/FocusMode";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Project, IdeaData } from "@/types";
+import { Project, IdeaData, UserProfile } from "@/types";
 
 export default function Index() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [ideas, setIdeas] = useState<IdeaData[]>([]);
+  const [profile, setProfile] = useState<UserProfile>({
+    name: "Founder",
+    role: "Entrepreneur",
+    goals: [],
+    experience: "intermediate",
+    interests: [],
+    mission: "",
+    vision: "",
+    antiVision: "",
+    alignmentScores: { clarity: 5, energy: 5, confidence: 5 }
+  });
   const [showIdeaWizard, setShowIdeaWizard] = useState(false);
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
   const [showFocusMode, setShowFocusMode] = useState(false);
@@ -29,6 +40,11 @@ export default function Index() {
     if (storedIdeas) {
       setIdeas(JSON.parse(storedIdeas));
     }
+
+    const storedProfile = localStorage.getItem("profile");
+    if (storedProfile) {
+      setProfile(JSON.parse(storedProfile));
+    }
   }, []);
 
   useEffect(() => {
@@ -38,6 +54,10 @@ export default function Index() {
   useEffect(() => {
     localStorage.setItem("ideas", JSON.stringify(ideas));
   }, [ideas]);
+
+  useEffect(() => {
+    localStorage.setItem("profile", JSON.stringify(profile));
+  }, [profile]);
 
   const saveIdea = (newIdea: IdeaData) => {
     setIdeas(prevIdeas => [...prevIdeas, newIdea]);
@@ -96,6 +116,10 @@ export default function Index() {
 
     saveProject(newProject);
     setIdeas(prevIdeas => prevIdeas.filter(i => i.id !== idea.id));
+  };
+
+  const updateProfile = (updatedProfile: UserProfile) => {
+    setProfile(updatedProfile);
   };
 
   return (
@@ -185,7 +209,10 @@ export default function Index() {
           </TabsContent>
 
           <TabsContent value="profile" className="mt-6">
-            <FounderProfile />
+            <FounderProfile 
+              profile={profile}
+              onUpdateProfile={updateProfile}
+            />
           </TabsContent>
         </Tabs>
 
@@ -198,10 +225,16 @@ export default function Index() {
         )}
 
         {showTemplateLibrary && (
-          <ProjectTemplateLibrary
-            onSaveProject={saveProject}
-            onClose={() => setShowTemplateLibrary(false)}
-          />
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg max-w-6xl max-h-[90vh] overflow-auto">
+              <TemplateLibrary
+                onCreateProject={() => {}}
+              />
+              <div className="p-4 border-t">
+                <Button onClick={() => setShowTemplateLibrary(false)}>Close</Button>
+              </div>
+            </div>
+          </div>
         )}
 
         {showFocusMode && (
