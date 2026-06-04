@@ -521,7 +521,27 @@ Goal: ship to production and use it for real.
 **Files:** Vercel config (via dashboard), `README.md` deployment section
 **Size:** M
 
-### Task 7.3: 7-day dogfood usage
+### Task 7.3: Lovable cutover
+
+**Description:** Detach the repo from Lovable entirely. The MVP is now standing on its own — no need for the editor scaffolding. Can be moved earlier (e.g. Phase 0) if continued Lovable editing isn't planned during the build.
+
+**Acceptance criteria:**
+- [ ] `lovable-tagger` removed from `package.json` dependencies
+- [ ] `componentTagger()` plugin removed from `vite.config.ts`
+- [ ] `index.html` meta tags rewritten: own description, own OG image (or none), own Twitter handle (or none)
+- [ ] `README.md` rewritten to describe polypreneur-os: what it is, how to run locally, link to spec/plan, no Lovable project URL
+- [ ] `bun.lockb` / `package-lock.json` regenerated without `lovable-tagger` transitive deps
+
+**Verification:**
+- [ ] `bun run dev` and `bun run build` both succeed
+- [ ] Production bundle no longer contains the Lovable tagger code (grep on built JS)
+- [ ] Page source on production has no Lovable references
+
+**Dependencies:** None technically, but scheduled here so it doesn't disrupt any Lovable editing during the build
+**Files:** `package.json`, `vite.config.ts`, `index.html`, `README.md`, lockfile
+**Size:** S
+
+### Task 7.4: 7-day dogfood usage
 
 **Description:** Not a code task. Use the app every day for 7 consecutive days. Log issues / friction in `docs/dogfood-log.md`. After 7 days, decide v1.1 backlog.
 
@@ -533,7 +553,7 @@ Goal: ship to production and use it for real.
 **Verification:**
 - [ ] Spec's success criterion #7 met ("7 consecutive days without falling back to a spreadsheet")
 
-**Dependencies:** 7.2
+**Dependencies:** 7.2, 7.3
 **Files:** `docs/dogfood-log.md`
 **Size:** N/A (not code)
 

@@ -289,6 +289,7 @@ export function ProjectCard({ project, onOpen }: Props) {
 3. **Auth:** OAuth via Supabase Auth. GitHub provider as primary (matches the audience). Google can be enabled later with a single config change.
 4. **Hosting:** Vercel for the SPA. Supabase managed (free tier) for Postgres/Auth/Edge Functions.
 5. **Dogfooding commitment:** 6 real projects registered on day one. This means seed data is mandatory before the MVP is considered "done" — bulk-import flow needs to exist.
+6. **Lovable cutover:** the long-term intent is to detach from Lovable entirely — no `lovable-tagger` Vite plugin, no Lovable meta tags, no Lovable-branded README, no dependency on the Lovable project URL. The cutover is scheduled for Phase 7 (post-MVP) so it doesn't disrupt any continued use of Lovable as an editor during the build, but it can move to Phase 0 if you'd rather sever now.
 
 ### Knock-on effects (folded into the plan)
 
