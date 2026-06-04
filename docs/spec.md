@@ -1,6 +1,6 @@
 # Spec: Polypreneur OS
 
-> Status: **DRAFT** — awaiting human review before Phase 2 (Plan).
+> Status: **APPROVED** — Phase 1 complete. Phase 2 plan at `docs/plan.md`.
 > Owner: @homielea
 > Last updated: 2026-06-04
 
@@ -282,29 +282,28 @@ export function ProjectCard({ project, onOpen }: Props) {
 - **Edge Functions for AI calls** — keeps API key server-side, lets us swap models without redeploying the SPA.
 - **Single-user / single-tenant in v1** — but `user_id` scoping everywhere so we don't paint ourselves into a corner.
 
-## 11. Open questions
+## 11. Resolved decisions
 
-These block Phase 2 (Plan). I need answers:
+1. **AI provider:** Anthropic Claude via `@anthropic-ai/sdk`. Calls proxied through a Supabase Edge Function so the API key stays server-side.
+2. **Integrations for v1:** **None.** Manual entry only. Ship the data model, UX, and AI loop first; bolt on GitHub/Stripe/etc. in v2 once the shape is right.
+3. **Auth:** OAuth via Supabase Auth. GitHub provider as primary (matches the audience). Google can be enabled later with a single config change.
+4. **Hosting:** Vercel for the SPA. Supabase managed (free tier) for Postgres/Auth/Edge Functions.
+5. **Dogfooding commitment:** 6 real projects registered on day one. This means seed data is mandatory before the MVP is considered "done" — bulk-import flow needs to exist.
 
-1. **AI provider** — Anthropic Claude (recommended: matches your existing tooling) or OpenAI?
-2. **Which 1-2 data integrations for v1?** Candidates, in rough order of leverage:
-   - **GitHub** — commit activity → momentum signal per project (highest leverage if your projects are code)
-   - **Stripe** — revenue per project → north-star metric auto-populated
-   - **Plausible / GA** — traffic per project
-   - **Linear / Notion** — open tasks per project
-   - Or: skip integrations entirely in v1, manual entry only
-3. **Auth flow** — magic link only (simplest, recommended), or Google/GitHub OAuth?
-4. **Hosting** — Vercel, Cloudflare Pages, or self-hosted? (Supabase has free tier so we pick whatever's cheapest/fastest.)
-5. **Dogfooding commitment** — what's the minimum number of *your real projects* you'll register on day one? This shapes which fields are mandatory vs optional.
+### Knock-on effects (folded into the plan)
+
+- Skipping integrations means **momentum score is computed from internal signals only**: stage changes, check-ins, last-edit timestamps. No commit/revenue/traffic feeds.
+- 6 projects on day one means the Portfolio grid must work well at N=6 visually (no virtualization needed yet) but the data model must not assume N=1.
+- Vercel + Supabase = environment variables managed in Vercel; preview deploys per PR; Edge Function deployed via Supabase CLI.
 
 ---
 
 ## Verification checklist (per spec-driven-development skill)
 
 - [x] Spec covers all six core areas (Objective, Commands, Structure, Style, Testing, Boundaries)
-- [ ] **Human has reviewed and approved this spec** ← we are here
+- [x] Human has reviewed and approved this spec
 - [x] Success criteria are specific and testable
 - [x] Boundaries (Always/Ask First/Never) are defined
 - [x] Spec saved to repository (`docs/spec.md`)
 
-**Next step:** answer the five open questions, then advance to Phase 2 (Plan).
+**Phase 1 complete.** See `docs/plan.md` for Phase 2.
