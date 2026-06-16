@@ -78,6 +78,10 @@ npm run scribe:scan  # scan the Drive folder + content-flagged check-ins -> jobs
   self-hosted **Postiz** is the intended OSS backend for the extracted product.
   Content is linked to a venture, so distribution and the Analyst are
   project-scoped. See `src/lib/content-engine/README.md` for the extraction plan.
+- **Faceless video (Studio)** — the Producer agent turns an approved piece into a
+  video package (title, voiceover script, scene/b-roll plan, thumbnail concept);
+  you approve before render/distribute; rendering is a delegated backend (stub
+  in v1, Blotato/vidIQ later); approved videos publish via the Blotato media path.
 - **The Analyst** — transparent, rule-based signals: per-venture momentum (7d vs
   prior 7d), a neglect radar ("going cold" before a venture dies, also surfaced
   on Today), and content-performance metrics (Beehiiv ingest; seeded otherwise).

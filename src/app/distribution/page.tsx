@@ -24,8 +24,29 @@ import type {
   ChannelConnection,
   Publication,
   Venture,
+  VideoProduction,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+/** A publishable item — either an approved text piece or an approved video. */
+interface Publishable {
+  kind: "job" | "production";
+  id: string;
+  label: string;
+  venture_id: string | null;
+}
+
+function jobToPublishable(job: AgentJob): Publishable {
+  return { kind: "job", id: job.id, label: jobLabel(job), venture_id: job.venture_id };
+}
+function productionToPublishable(p: VideoProduction): Publishable {
+  return {
+    kind: "production",
+    id: p.id,
+    label: `🎬 ${p.title || "Faceless video"}`,
+    venture_id: p.venture_id,
+  };
+}
 
 const AGENT_LABEL: Record<string, string> = {
   scribe: "Scribe",
@@ -72,6 +93,10 @@ export default function DistributionPage() {
     queryKey: ["distribution-status"],
     queryFn: () => getJSON<{ blotato: boolean; beehiiv: boolean }>("/api/distribution/status"),
   });
+  const productions = useQuery({
+    queryKey: ["productions"],
+    queryFn: () => getJSON<VideoProduction[]>("/api/productions"),
+  });
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["publications"] });
@@ -115,7 +140,14 @@ export default function DistributionPage() {
       />
 
       <Composer
-        jobs={(jobs.data ?? []).filter((j) => j.status === "approved")}
+        items={[
+          ...(jobs.data ?? [])
+            .filter((j) => j.status === "approved")
+            .map(jobToPublishable),
+          ...(productions.data ?? [])
+            .filter((p) => p.status === "approved")
+            .map(productionToPublishable),
+        ]}
         connections={connections.data ?? []}
         ventureName={ventureName}
         onChanged={invalidate}
@@ -277,30 +309,30 @@ function ChannelGrid({
 }
 
 function Composer({
-  jobs,
+  items,
   connections,
   ventureName,
   onChanged,
 }: {
-  jobs: AgentJob[];
+  items: Publishable[];
   connections: ChannelConnection[];
   ventureName: (id: string | null) => string;
   onChanged: () => void;
 }) {
-  const [jobId, setJobId] = useState<string>("");
+  const [itemId, setItemId] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [when, setWhen] = useState("");
 
-  const job = jobs.find((j) => j.id === jobId) ?? null;
+  const item = items.find((i) => i.id === itemId) ?? null;
 
   // Channels available to this piece: its venture's channels + global ones.
   const available = useMemo(() => {
     return connections.filter(
       (c) =>
         c.status !== "disabled" &&
-        (c.venture_id === null || !job?.venture_id || c.venture_id === job.venture_id),
+        (c.venture_id === null || !item?.venture_id || c.venture_id === item.venture_id),
     );
-  }, [connections, job]);
+  }, [connections, item]);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -312,10 +344,11 @@ function Composer({
 
   const publish = useMutation({
     mutationFn: async () => {
-      if (!jobId || selected.size === 0) throw new Error("Pick a piece and channels.");
+      if (!item || selected.size === 0) throw new Error("Pick a piece and channels.");
+      const idField = item.kind === "job" ? { jobId: item.id } : { productionId: item.id };
       for (const connectionId of selected) {
         await sendJSON("/api/publications", "POST", {
-          jobId,
+          ...idField,
           connectionId,
           scheduledFor: when ? new Date(when).toISOString() : null,
         });
@@ -337,33 +370,29 @@ function Composer({
       </h3>
       <Card>
         <CardContent className="space-y-4 py-4">
-          <Select value={jobId} onValueChange={(v) => { setJobId(v); setSelected(new Set()); }}>
+          <Select value={itemId} onValueChange={(v) => { setItemId(v); setSelected(new Set()); }}>
             <SelectTrigger>
-              <SelectValue placeholder="Choose an approved piece…" />
+              <SelectValue placeholder="Choose an approved piece or video…" />
             </SelectTrigger>
             <SelectContent>
-              {jobs.length === 0 && (
+              {items.length === 0 && (
                 <SelectItem value="none" disabled>
                   Nothing approved yet
                 </SelectItem>
               )}
-              {jobs.map((j) => (
-                <SelectItem key={j.id} value={j.id}>
-                  {jobLabel(j)}
+              {items.map((i) => (
+                <SelectItem key={i.id} value={i.id}>
+                  {i.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {job && (
+          {item && (
             <>
-              <p className="whitespace-pre-wrap rounded-md bg-muted px-3 py-2 text-sm">
-                {(job.edited_output ?? job.output).slice(0, 320)}
-                {(job.edited_output ?? job.output).length > 320 ? "…" : ""}
-              </p>
               <div>
                 <p className="mb-2 text-xs text-muted-foreground">
-                  Channels for {ventureName(job.venture_id)}:
+                  Channels for {ventureName(item.venture_id)}:
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {available.length === 0 && (

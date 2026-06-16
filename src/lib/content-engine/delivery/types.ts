@@ -18,6 +18,8 @@ export interface DeliveryInput {
   /** The target account/channel. Null for ad-hoc manual sends. */
   connection: ChannelConnection | null;
   platform: string;
+  /** Asset URLs (e.g. a faceless video) for backends that support media. */
+  mediaUrls: string[];
 }
 
 export interface DeliveryResult {

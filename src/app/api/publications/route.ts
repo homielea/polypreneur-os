@@ -16,17 +16,21 @@ export function GET() {
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
     jobId?: string;
+    productionId?: string;
     connectionId?: string | null;
     platform?: string;
     scheduledFor?: string | null;
   };
-  if (!body.jobId) return badRequest("jobId is required.");
+  if (!body.jobId && !body.productionId) {
+    return badRequest("jobId or productionId is required.");
+  }
   if (!body.connectionId && !body.platform) {
     return badRequest("connectionId or platform is required.");
   }
   return handler(() =>
     createPublication({
-      jobId: body.jobId as string,
+      jobId: body.jobId ?? null,
+      productionId: body.productionId ?? null,
       connectionId: body.connectionId ?? null,
       platform: body.platform,
       scheduledFor: body.scheduledFor ?? null,

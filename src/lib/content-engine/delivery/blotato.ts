@@ -34,7 +34,7 @@ export function isBlotatoBacked(platform: string): boolean {
 
 export const blotatoAdapter: DeliveryAdapter = {
   key: "blotato",
-  async deliver({ content, connection, platform }) {
+  async deliver({ content, connection, platform, mediaUrls }) {
     if (!hasBlotato) throw new Error("Blotato is not configured.");
     const targetType = BLOTATO_TARGETS[platform];
     if (!targetType) throw new Error(`Blotato has no target for "${platform}".`);
@@ -54,7 +54,7 @@ export const blotatoAdapter: DeliveryAdapter = {
       body: JSON.stringify({
         post: {
           accountId,
-          content: { text: content, mediaUrls: [], platform: targetType },
+          content: { text: content, mediaUrls: mediaUrls ?? [], platform: targetType },
           target: { targetType },
         },
       }),

@@ -7,6 +7,7 @@ import { formatDistanceToNow, parseISO } from "date-fns";
 import {
   Check,
   ChevronDown,
+  Clapperboard,
   RefreshCw,
   Sparkles,
   Trash2,
@@ -377,6 +378,12 @@ function ApprovedCard({ job, onChanged }: { job: AgentJob; onChanged: () => void
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const produce = useMutation({
+    mutationFn: () => sendJSON("/api/productions", "POST", { jobId: job.id }),
+    onSuccess: () => toast.success("Production created — open Studio to generate it"),
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   return (
     <Card className="border-emerald-200">
       <CardHeader className="pb-2">
@@ -393,10 +400,10 @@ function ApprovedCard({ job, onChanged }: { job: AgentJob; onChanged: () => void
           {draftOf(job)}
         </article>
         <p className="text-xs text-muted-foreground">
-          Publishing to the content engine (Beehiiv) is stubbed in v1 — copy the
-          approved piece out, or wire the integration later.
+          Publish from Distribution, repurpose into more formats, or turn it into
+          a faceless video in Studio.
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {job.agent === "scribe" && (
             <Button
               size="sm"
@@ -407,6 +414,14 @@ function ApprovedCard({ job, onChanged }: { job: AgentJob; onChanged: () => void
               <Sparkles className="mr-1 h-3 w-3" /> Repurpose
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => produce.mutate()}
+            disabled={produce.isPending}
+          >
+            <Clapperboard className="mr-1 h-3 w-3" /> Produce video
+          </Button>
           <DeleteButton id={job.id} onChanged={onChanged} />
         </div>
       </CardContent>

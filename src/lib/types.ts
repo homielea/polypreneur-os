@@ -144,12 +144,39 @@ export type PublicationStatus =
 
 export interface Publication {
   id: string;
-  job_id: string; // the approved agent_job being published
+  job_id: string | null; // approved text piece (null for a video production)
+  production_id: string | null; // approved video production (null for text)
   channel: string; // platform string
   channel_connection_id: string | null; // which connected account (if any)
+  media_urls: string; // JSON array of asset URLs (video/image)
   status: PublicationStatus;
   scheduled_for: string | null; // ISO; null = publish immediately
   external_ref: string | null; // e.g. Beehiiv post id
+  error: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Faceless-video production (Phase 2). Lives on the same approval rails. */
+export type VideoProductionStatus =
+  | "draft"
+  | "awaiting_approval"
+  | "approved"
+  | "rejected"
+  | "failed";
+
+export interface VideoProduction {
+  id: string;
+  job_id: string | null; // source script (agent_job)
+  venture_id: string | null;
+  script: string; // snapshot of the source script
+  title: string;
+  voiceover_script: string;
+  scene_plan: string; // JSON array of scene/b-roll lines
+  thumbnail_concept: string;
+  video_url: string | null; // rendered asset (delegated backend)
+  backend: string | null;
+  status: VideoProductionStatus;
   error: string | null;
   created_at: string;
   updated_at: string;
@@ -186,6 +213,7 @@ export interface DbSchema {
   idea: Idea;
   publication: Publication;
   channel_connection: ChannelConnection;
+  video_production: VideoProduction;
   metric: Metric;
   app_setting: AppSetting;
 }

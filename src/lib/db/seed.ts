@@ -112,6 +112,8 @@ export function buildSeed(): Store {
       { id: "cc-li", venture_id: null, platform: "linkedin", display_name: "Lea on LinkedIn", handle: "lea", status: "placeholder", created_at: iso(-30) },
     ],
 
+    video_production: [],
+
     metric: [
       // Sample newsletter metrics so the Analyst has data without live creds.
       { id: "m1", venture_id: vNewsletter, source: "beehiiv", name: "subscribers", value: 1240, date: ymd(-9), ref: null, created_at: iso(-9) },
