@@ -55,9 +55,10 @@ npm run scribe:scan  # scan the Drive folder + content-flagged check-ins -> jobs
 - **Approval Inbox** — every agent draft lands here; nothing ships without your
   approval. Approved Lea's Lessons can be **repurposed** (Repurposer agent →
   short-form script, newsletter section, social posts — each its own approval).
-- **Distribution** — get approved pieces out through an approval-gated, env-gated
-  write path. `manual` (mark-exported) always works; `beehiiv` creates a *draft*
-  post (the final send stays a human step). Publish now or schedule.
+- **Distribution** — Postiz-style: per-venture **channel connections**, a
+  multi-channel composer from approved content, and a scheduled timeline.
+  Channels are placeholders in v1 (the operator surface + routing); `beehiiv`
+  creates a real *draft*, others are "mark as posted". Publish now or schedule.
 - **Settings** — leverage weights, Scribe cadence, integration status + sync.
 
 ## Beyond the v1 spec (built in this branch)
@@ -68,8 +69,12 @@ npm run scribe:scan  # scan the Drive folder + content-flagged check-ins -> jobs
 - **The Repurposer** — the second agent, proving the rails generalize: one
   approved piece → derivative formats, each approval-gated. Operator-triggered in
   v1 (the human is the router); v2 can auto-chain.
-- **Marketing distribution** — the first write/outbound capability, gated and
-  env-driven (Beehiiv draft-create; `social` reserved).
+- **Marketing distribution** — per-venture channel connections (Beehiiv,
+  Substack, X, LinkedIn, Instagram, …), a multi-channel composer, and a
+  scheduled outbox. Channels are placeholders in v1; real multi-network delivery
+  is meant to be delegated to one aggregator adapter (e.g. self-hosted Postiz),
+  not rebuilt here. Content is linked to a venture so distribution and the
+  Analyst are project-scoped.
 - **The Analyst** — transparent, rule-based signals: per-venture momentum (7d vs
   prior 7d), a neglect radar ("going cold" before a venture dies, also surfaced
   on Today), and content-performance metrics (Beehiiv ingest; seeded otherwise).

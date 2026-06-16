@@ -97,6 +97,7 @@ export interface AgentJob {
   id: string;
   agent: AgentName;
   format: JobFormat | null; // derivative format (Repurposer); null for the Scribe
+  venture_id: string | null; // optional content -> venture link (project scoping)
   input_ref: string; // pointer to source (e.g. drive file id / checkin id / job:<id>)
   input_text: string; // resolved source text the agent worked from
   output: string; // the agent's draft (immutable record of what it produced)
@@ -117,8 +118,24 @@ export interface Idea {
   status: IdeaStatus;
 }
 
-/** Distribution channels (§ marketing). `manual` always works; others env-gated. */
-export type Channel = "manual" | "beehiiv" | "social";
+/**
+ * Distribution (§ marketing). Channels are connections, not a fixed enum, so
+ * routing can be per-venture and many platforms can exist as placeholders
+ * (Postiz-like). `platform` is a free string; the registry in
+ * src/lib/distribution/platforms.ts gives each one a label + send adapter.
+ */
+export type ConnectionStatus = "connected" | "placeholder" | "disabled";
+
+export interface ChannelConnection {
+  id: string;
+  venture_id: string | null; // null = global (any venture)
+  platform: string; // beehiiv / substack / x / linkedin / youtube / ...
+  display_name: string;
+  handle: string;
+  status: ConnectionStatus;
+  created_at: string;
+}
+
 export type PublicationStatus =
   | "scheduled"
   | "published"
@@ -128,7 +145,8 @@ export type PublicationStatus =
 export interface Publication {
   id: string;
   job_id: string; // the approved agent_job being published
-  channel: Channel;
+  channel: string; // platform string
+  channel_connection_id: string | null; // which connected account (if any)
   status: PublicationStatus;
   scheduled_for: string | null; // ISO; null = publish immediately
   external_ref: string | null; // e.g. Beehiiv post id
@@ -167,6 +185,7 @@ export interface DbSchema {
   agent_job: AgentJob;
   idea: Idea;
   publication: Publication;
+  channel_connection: ChannelConnection;
   metric: Metric;
   app_setting: AppSetting;
 }

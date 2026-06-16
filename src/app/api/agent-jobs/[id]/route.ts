@@ -20,13 +20,16 @@ export async function PATCH(
   const body = (await req.json().catch(() => ({}))) as {
     action?: "edit" | "approve" | "reject" | "reset";
     edited_output?: string;
+    venture_id?: string | null;
   };
 
   const jobs = await list("agent_job");
   const job = jobs.find((j) => j.id === params.id);
   if (!job) return badRequest("Job not found.");
 
-  let patch: Partial<AgentJob> = { updated_at: nowIso() };
+  const patch: Partial<AgentJob> = { updated_at: nowIso() };
+  if ("venture_id" in body) patch.venture_id = body.venture_id ?? null;
+
   switch (body.action) {
     case "edit":
       patch.edited_output = body.edited_output ?? "";
@@ -43,6 +46,10 @@ export async function PATCH(
     case "reset":
       patch.status = "pending";
       patch.error = null;
+      break;
+    case undefined:
+      // venture-only assignment (no lifecycle action) is allowed
+      if (!("venture_id" in body)) return badRequest("Nothing to update.");
       break;
     default:
       return badRequest("Unknown action.");

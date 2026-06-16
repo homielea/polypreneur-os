@@ -46,6 +46,7 @@ export async function enqueueRepurpose(
       id: newId(),
       agent: "repurposer",
       format,
+      venture_id: scribeJob.venture_id, // inherit the source piece's venture
       input_ref: inputRef,
       input_text: source,
       output: "",

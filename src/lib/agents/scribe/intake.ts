@@ -104,6 +104,7 @@ function makeJob(
     id: newId(),
     agent: "scribe",
     format: null,
+    venture_id: null,
     input_ref: inputRef,
     input_text: inputText,
     output: "",

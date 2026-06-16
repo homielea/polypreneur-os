@@ -1,14 +1,18 @@
 /**
  * Distribution core. The operator initiates every publication from an APPROVED
- * agent_job; nothing publishes itself. Sending is mechanical (not an LLM) and
- * dispatches by channel. Scheduled publications are processed on-demand by
- * `runDuePublications` (the same cadence pattern as the Scribe).
+ * agent_job; nothing publishes itself. Sending dispatches by the target
+ * platform's adapter:
+ *   - beehiiv     : creates a real DRAFT post (final send stays human in Beehiiv)
+ *   - manual/placeholder : "mark as posted" — the operator confirms the post
+ *
+ * Scheduled publications are processed on-demand (runDuePublications), the same
+ * cadence pattern as the agents.
  */
 
 import "server-only";
 import { insert, list, newId, nowIso, update } from "@/lib/db";
-import type { AgentJob, Channel, Publication } from "@/lib/types";
-import { isChannelAvailable } from "./channels";
+import type { AgentJob, Publication } from "@/lib/types";
+import { platformDef } from "./platforms";
 import { publishToBeehiiv } from "./beehiiv";
 
 function contentOf(job: AgentJob): string {
@@ -29,20 +33,14 @@ export async function sendPublication(pub: Publication): Promise<Publication> {
   try {
     const job = await getApprovedJob(pub.job_id);
     const content = contentOf(job);
+    const adapter = platformDef(pub.channel).adapter;
 
     let externalRef: string | null = null;
-    switch (pub.channel) {
-      case "manual":
-        externalRef = null; // operator copies it out; we just mark it shipped
-        break;
-      case "beehiiv": {
-        const r = await publishToBeehiiv(content);
-        externalRef = r.externalRef;
-        break;
-      }
-      case "social":
-        throw new Error("Social publishing is stubbed in v1.");
+    if (adapter === "beehiiv") {
+      const r = await publishToBeehiiv(content);
+      externalRef = r.externalRef;
     }
+    // manual / placeholder: operator-confirmed "posted" — nothing to call.
 
     return update("publication", pub.id, {
       status: "published",
@@ -62,7 +60,8 @@ export async function sendPublication(pub: Publication): Promise<Publication> {
 
 export interface CreatePublicationInput {
   jobId: string;
-  channel: Channel;
+  connectionId?: string | null;
+  platform?: string; // used when there's no connection (e.g. quick "manual")
   scheduledFor?: string | null; // ISO; null/absent = publish now
 }
 
@@ -70,8 +69,14 @@ export async function createPublication(
   input: CreatePublicationInput,
 ): Promise<Publication> {
   await getApprovedJob(input.jobId); // validates approved
-  if (input.channel !== "manual" && !isChannelAvailable(input.channel)) {
-    throw new Error(`Channel "${input.channel}" is not available.`);
+
+  let platform = input.platform ?? "manual";
+  if (input.connectionId) {
+    const conn = (await list("channel_connection")).find(
+      (c) => c.id === input.connectionId,
+    );
+    if (!conn) throw new Error("Channel connection not found.");
+    platform = conn.platform;
   }
 
   const ts = nowIso();
@@ -79,7 +84,8 @@ export async function createPublication(
   const pub: Publication = {
     id: newId(),
     job_id: input.jobId,
-    channel: input.channel,
+    channel: platform,
+    channel_connection_id: input.connectionId ?? null,
     status: "scheduled",
     scheduled_for: scheduledFor,
     external_ref: null,
@@ -89,7 +95,6 @@ export async function createPublication(
   };
   const created = await insert("publication", pub);
 
-  // Publish immediately unless scheduled for the future.
   if (!scheduledFor || scheduledFor <= ts) {
     return sendPublication(created);
   }

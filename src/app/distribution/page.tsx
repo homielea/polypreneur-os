@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { formatDistanceToNow, parseISO } from "date-fns";
-import { RefreshCw, Send, Trash2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { Plus, Send, Trash2, Power } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,156 +18,294 @@ import {
 } from "@/components/ui/select";
 import { getJSON, sendJSON } from "@/lib/client";
 import { FORMAT_LABEL } from "@/lib/agents/repurposer/prompt";
-import type { AgentJob, Channel, Publication } from "@/lib/types";
+import { PLATFORM_LIST, platformDef } from "@/lib/distribution/platforms";
+import type {
+  AgentJob,
+  ChannelConnection,
+  Publication,
+  Venture,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-interface ChannelInfo {
-  key: Channel;
-  label: string;
-  available: boolean;
-  note: string;
-}
-interface PublicationsResponse {
-  publications: Publication[];
-  channels: ChannelInfo[];
-}
 
 const AGENT_LABEL: Record<string, string> = {
   scribe: "Scribe",
   repurposer: "Repurposer",
 };
-
-function jobLabel(job: AgentJob): string {
-  const tag = job.format ? FORMAT_LABEL[job.format] : "Lea's Lesson";
-  const first =
-    (job.edited_output ?? job.output).split("\n").find((l) => l.trim()) ?? "";
-  return `${AGENT_LABEL[job.agent] ?? job.agent} · ${tag} — ${first.slice(0, 70)}`;
-}
-
 const STATUS_STYLE: Record<string, string> = {
   published: "bg-emerald-600",
   scheduled: "bg-sky-600",
   failed: "bg-destructive",
   canceled: "bg-muted-foreground",
 };
+const CONN_STYLE: Record<string, string> = {
+  connected: "bg-emerald-600",
+  placeholder: "bg-amber-500",
+  disabled: "bg-muted-foreground",
+};
+
+function jobLabel(job: AgentJob): string {
+  const tag = job.format ? FORMAT_LABEL[job.format] : "Lea's Lesson";
+  const first =
+    (job.edited_output ?? job.output).split("\n").find((l) => l.trim()) ?? "";
+  return `${AGENT_LABEL[job.agent] ?? job.agent} · ${tag} — ${first.slice(0, 60)}`;
+}
 
 export default function DistributionPage() {
   const qc = useQueryClient();
+  const connections = useQuery({
+    queryKey: ["connections"],
+    queryFn: () => getJSON<ChannelConnection[]>("/api/connections"),
+  });
   const pubs = useQuery({
     queryKey: ["publications"],
-    queryFn: () => getJSON<PublicationsResponse>("/api/publications"),
+    queryFn: () => getJSON<{ publications: Publication[] }>("/api/publications"),
   });
   const jobs = useQuery({
     queryKey: ["agent-jobs"],
     queryFn: () => getJSON<AgentJob[]>("/api/agent-jobs"),
   });
+  const ventures = useQuery({
+    queryKey: ["ventures-list"],
+    queryFn: () => getJSON<{ ventures: Venture[] }>("/api/ventures"),
+  });
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["publications"] });
-    qc.invalidateQueries({ queryKey: ["agent-jobs"] });
+    qc.invalidateQueries({ queryKey: ["connections"] });
   };
 
-  const runDue = useMutation({
-    mutationFn: () => sendJSON<{ sent: number }>("/api/publications/run", "POST"),
-    onSuccess: (r) => {
-      toast.success(`Processed ${r.sent} due publication(s)`);
-      invalidate();
-    },
-  });
-
-  const approved = (jobs.data ?? []).filter((j) => j.status === "approved");
-  const channels = pubs.data?.channels ?? [];
-  const publications = pubs.data?.publications ?? [];
+  const ventureName = (id: string | null) =>
+    id ? (ventures.data?.ventures.find((v) => v.id === id)?.name ?? "—") : "Global";
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
+    <div className="space-y-8">
+      <header>
         <h1 className="text-2xl font-bold">Distribution</h1>
         <p className="text-muted-foreground">
-          Get approved pieces out. You initiate every publish; Beehiiv posts are
-          created as drafts — the final send stays your call. Judgment stays
-          human, especially at the boundary.
+          Connect channels per venture, compose once, schedule everywhere. You
+          approve and schedule; agents take over the grunt-work in v2. Most
+          channels are placeholders in v1 — Beehiiv creates a real draft; others
+          are “mark as posted” until a delivery adapter is wired.
         </p>
-        <div className="flex flex-wrap gap-2">
-          {channels.map((c) => (
-            <Badge key={c.key} variant={c.available ? "secondary" : "outline"}>
-              {c.label} {c.available ? "" : "· unavailable"}
-            </Badge>
-          ))}
-        </div>
       </header>
 
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Approved &amp; ready ({approved.length})
-        </h3>
-        {approved.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            Nothing approved yet. Approve a draft in the inbox first.
-          </p>
-        )}
-        {approved.map((job) => (
-          <PublishRow
-            key={job.id}
-            job={job}
-            channels={channels}
-            onChanged={invalidate}
-          />
-        ))}
-      </section>
+      <ChannelGrid
+        connections={connections.data ?? []}
+        ventures={ventures.data?.ventures ?? []}
+        ventureName={ventureName}
+        onChanged={invalidate}
+      />
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Outbox ({publications.length})
-          </h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => runDue.mutate()}
-            disabled={runDue.isPending}
-          >
-            <RefreshCw className="mr-2 h-3 w-3" /> Run due
-          </Button>
-        </div>
-        {publications.length === 0 && (
-          <p className="text-sm text-muted-foreground">No publications yet.</p>
-        )}
-        {publications.map((p) => (
-          <OutboxRow
-            key={p.id}
-            pub={p}
-            jobs={jobs.data ?? []}
-            onChanged={invalidate}
-          />
-        ))}
-      </section>
+      <Composer
+        jobs={(jobs.data ?? []).filter((j) => j.status === "approved")}
+        connections={connections.data ?? []}
+        ventureName={ventureName}
+        onChanged={invalidate}
+      />
+
+      <Schedule
+        publications={pubs.data?.publications ?? []}
+        jobs={jobs.data ?? []}
+        onChanged={invalidate}
+      />
     </div>
   );
 }
 
-function PublishRow({
-  job,
-  channels,
+function ChannelGrid({
+  connections,
+  ventures,
+  ventureName,
   onChanged,
 }: {
-  job: AgentJob;
-  channels: ChannelInfo[];
+  connections: ChannelConnection[];
+  ventures: Venture[];
+  ventureName: (id: string | null) => string;
   onChanged: () => void;
 }) {
-  const firstAvailable = channels.find((c) => c.available)?.key ?? "manual";
-  const [channel, setChannel] = useState<Channel>(firstAvailable);
-  const [when, setWhen] = useState("");
+  const qc = useQueryClient();
+  const refresh = () => qc.invalidateQueries({ queryKey: ["connections"] });
 
-  const publish = useMutation({
+  const [platform, setPlatform] = useState("x");
+  const [ventureId, setVentureId] = useState<string>("global");
+  const [handle, setHandle] = useState("");
+
+  const add = useMutation({
     mutationFn: () =>
-      sendJSON("/api/publications", "POST", {
-        jobId: job.id,
-        channel,
-        scheduledFor: when ? new Date(when).toISOString() : null,
+      sendJSON("/api/connections", "POST", {
+        platform,
+        handle,
+        venture_id: ventureId === "global" ? null : ventureId,
       }),
     onSuccess: () => {
+      toast.success("Channel added (placeholder)");
+      setHandle("");
+      refresh();
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const toggle = useMutation({
+    mutationFn: (c: ChannelConnection) =>
+      sendJSON(`/api/connections/${c.id}`, "PATCH", {
+        status: c.status === "disabled" ? "placeholder" : "disabled",
+      }),
+    onSuccess: () => {
+      onChanged();
+      refresh();
+    },
+  });
+  const del = useMutation({
+    mutationFn: (id: string) => sendJSON(`/api/connections/${id}`, "DELETE"),
+    onSuccess: () => {
+      onChanged();
+      refresh();
+    },
+  });
+
+  return (
+    <section className="space-y-3">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        Channels ({connections.length})
+      </h3>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {connections.map((c) => {
+          const def = platformDef(c.platform);
+          return (
+            <Card key={c.id} className={cn(c.status === "disabled" && "opacity-50")}>
+              <CardContent className="space-y-2 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium">{def.label}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {c.handle || c.display_name} · {ventureName(c.venture_id)}
+                    </p>
+                  </div>
+                  <Badge className={cn("text-white", CONN_STYLE[c.status])}>
+                    {c.status}
+                  </Badge>
+                </div>
+                {def.note && (
+                  <p className="text-[11px] text-muted-foreground">{def.note}</p>
+                )}
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => toggle.mutate(c)}
+                  >
+                    <Power className="mr-1 h-3 w-3" />
+                    {c.status === "disabled" ? "Enable" : "Disable"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-destructive"
+                    onClick={() => del.mutate(c.id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Add a channel</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-end gap-2">
+          <Select value={platform} onValueChange={setPlatform}>
+            <SelectTrigger className="w-40 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PLATFORM_LIST.map((p) => (
+                <SelectItem key={p.key} value={p.key}>
+                  {p.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={ventureId} onValueChange={setVentureId}>
+            <SelectTrigger className="w-40 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="global">Global</SelectItem>
+              {ventures.map((v) => (
+                <SelectItem key={v.id} value={v.id}>
+                  {v.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            placeholder="@handle"
+            value={handle}
+            onChange={(e) => setHandle(e.target.value)}
+            className="w-36"
+          />
+          <Button size="sm" onClick={() => add.mutate()} disabled={add.isPending}>
+            <Plus className="mr-1 h-3 w-3" /> Add
+          </Button>
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
+
+function Composer({
+  jobs,
+  connections,
+  ventureName,
+  onChanged,
+}: {
+  jobs: AgentJob[];
+  connections: ChannelConnection[];
+  ventureName: (id: string | null) => string;
+  onChanged: () => void;
+}) {
+  const [jobId, setJobId] = useState<string>("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [when, setWhen] = useState("");
+
+  const job = jobs.find((j) => j.id === jobId) ?? null;
+
+  // Channels available to this piece: its venture's channels + global ones.
+  const available = useMemo(() => {
+    return connections.filter(
+      (c) =>
+        c.status !== "disabled" &&
+        (c.venture_id === null || !job?.venture_id || c.venture_id === job.venture_id),
+    );
+  }, [connections, job]);
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const publish = useMutation({
+    mutationFn: async () => {
+      if (!jobId || selected.size === 0) throw new Error("Pick a piece and channels.");
+      for (const connectionId of selected) {
+        await sendJSON("/api/publications", "POST", {
+          jobId,
+          connectionId,
+          scheduledFor: when ? new Date(when).toISOString() : null,
+        });
+      }
+    },
+    onSuccess: () => {
       toast.success(when ? "Scheduled" : "Published");
+      setSelected(new Set());
       setWhen("");
       onChanged();
     },
@@ -175,47 +313,163 @@ function PublishRow({
   });
 
   return (
-    <Card>
-      <CardContent className="flex flex-wrap items-center gap-3 py-3">
-        <p className="min-w-[180px] flex-1 text-sm font-medium">{jobLabel(job)}</p>
-        <Select value={channel} onValueChange={(v) => setChannel(v as Channel)}>
-          <SelectTrigger className="h-8 w-48 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {channels.map((c) => (
-              <SelectItem key={c.key} value={c.key} disabled={!c.available}>
-                {c.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Input
-          type="datetime-local"
-          value={when}
-          onChange={(e) => setWhen(e.target.value)}
-          className="h-8 w-44 text-xs"
-          title="Leave empty to publish now"
-        />
-        <Button size="sm" onClick={() => publish.mutate()} disabled={publish.isPending}>
-          <Send className="mr-1 h-3 w-3" /> {when ? "Schedule" : "Publish now"}
-        </Button>
-      </CardContent>
-    </Card>
+    <section className="space-y-3">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        Compose
+      </h3>
+      <Card>
+        <CardContent className="space-y-4 py-4">
+          <Select value={jobId} onValueChange={(v) => { setJobId(v); setSelected(new Set()); }}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choose an approved piece…" />
+            </SelectTrigger>
+            <SelectContent>
+              {jobs.length === 0 && (
+                <SelectItem value="none" disabled>
+                  Nothing approved yet
+                </SelectItem>
+              )}
+              {jobs.map((j) => (
+                <SelectItem key={j.id} value={j.id}>
+                  {jobLabel(j)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {job && (
+            <>
+              <p className="whitespace-pre-wrap rounded-md bg-muted px-3 py-2 text-sm">
+                {(job.edited_output ?? job.output).slice(0, 320)}
+                {(job.edited_output ?? job.output).length > 320 ? "…" : ""}
+              </p>
+              <div>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  Channels for {ventureName(job.venture_id)}:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {available.length === 0 && (
+                    <span className="text-sm text-muted-foreground">
+                      No channels for this venture. Add one above.
+                    </span>
+                  )}
+                  {available.map((c) => {
+                    const on = selected.has(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => toggle(c.id)}
+                        className={cn(
+                          "rounded-full border px-3 py-1 text-sm transition-colors",
+                          on
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "hover:bg-muted",
+                        )}
+                      >
+                        {platformDef(c.platform).label}
+                        {c.handle ? ` ${c.handle}` : ""}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  type="datetime-local"
+                  value={when}
+                  onChange={(e) => setWhen(e.target.value)}
+                  className="h-9 w-48 text-xs"
+                  title="Leave empty to publish now"
+                />
+                <Button
+                  onClick={() => publish.mutate()}
+                  disabled={publish.isPending || selected.size === 0}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  {when ? "Schedule" : "Publish now"} ({selected.size})
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </section>
   );
 }
 
-function OutboxRow({
-  pub,
+function Schedule({
+  publications,
   jobs,
   onChanged,
 }: {
-  pub: Publication;
+  publications: Publication[];
   jobs: AgentJob[];
   onChanged: () => void;
 }) {
-  const job = jobs.find((j) => j.id === pub.job_id);
+  const runDue = useMutation({
+    mutationFn: () => sendJSON<{ sent: number }>("/api/publications/run", "POST"),
+    onSuccess: (r) => {
+      toast.success(`Processed ${r.sent} due publication(s)`);
+      onChanged();
+    },
+  });
 
+  // Group by day (scheduled date, else created date) — a light calendar feel.
+  const groups = new Map<string, Publication[]>();
+  for (const p of publications) {
+    const key = (p.scheduled_for ?? p.created_at).slice(0, 10);
+    const arr = groups.get(key) ?? [];
+    arr.push(p);
+    groups.set(key, arr);
+  }
+  const days = [...groups.keys()].sort().reverse();
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Schedule &amp; outbox ({publications.length})
+        </h3>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => runDue.mutate()}
+          disabled={runDue.isPending}
+        >
+          Run due
+        </Button>
+      </div>
+      {days.length === 0 && (
+        <p className="text-sm text-muted-foreground">Nothing scheduled yet.</p>
+      )}
+      {days.map((day) => (
+        <div key={day} className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">
+            {format(parseISO(day), "EEEE, MMM d")}
+          </p>
+          {groups.get(day)!.map((p) => (
+            <ScheduleRow
+              key={p.id}
+              pub={p}
+              job={jobs.find((j) => j.id === p.job_id)}
+              onChanged={onChanged}
+            />
+          ))}
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function ScheduleRow({
+  pub,
+  job,
+  onChanged,
+}: {
+  pub: Publication;
+  job?: AgentJob;
+  onChanged: () => void;
+}) {
   const send = useMutation({
     mutationFn: () => sendJSON(`/api/publications/${pub.id}`, "POST"),
     onSuccess: () => {
@@ -231,47 +485,40 @@ function OutboxRow({
 
   return (
     <Card>
-      <CardContent className="space-y-2 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <span className="min-w-0 flex-1 truncate text-sm">
-            {job ? jobLabel(job) : "(job removed)"}
+      <CardContent className="flex items-center gap-3 py-2">
+        <Badge variant="outline">{platformDef(pub.channel).label}</Badge>
+        <span className="min-w-0 flex-1 truncate text-sm">
+          {job ? jobLabel(job) : "(job removed)"}
+        </span>
+        {pub.scheduled_for && (
+          <span className="text-xs text-muted-foreground">
+            {format(parseISO(pub.scheduled_for), "HH:mm")}
           </span>
-          <Badge className={cn("text-white", STATUS_STYLE[pub.status])}>
-            {pub.status}
-          </Badge>
-        </div>
-        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span>
-            {pub.channel}
-            {pub.scheduled_for &&
-              ` · for ${formatDistanceToNow(parseISO(pub.scheduled_for), { addSuffix: true })}`}
-            {pub.external_ref && ` · ref ${pub.external_ref}`}
-          </span>
-          <div className="flex gap-1">
-            {(pub.status === "failed" || pub.status === "scheduled") && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 px-2 text-xs"
-                onClick={() => send.mutate()}
-                disabled={send.isPending}
-              >
-                <Send className="mr-1 h-3 w-3" /> Send now
-              </Button>
-            )}
-            {pub.status === "scheduled" && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 px-2 text-xs text-destructive"
-                onClick={() => cancel.mutate()}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
-        </div>
-        {pub.error && <p className="text-xs text-destructive">{pub.error}</p>}
+        )}
+        <Badge className={cn("text-white", STATUS_STYLE[pub.status])}>
+          {pub.status}
+        </Badge>
+        {(pub.status === "failed" || pub.status === "scheduled") && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs"
+            onClick={() => send.mutate()}
+            disabled={send.isPending}
+          >
+            <Send className="mr-1 h-3 w-3" /> Send
+          </Button>
+        )}
+        {pub.status === "scheduled" && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-destructive"
+            onClick={() => cancel.mutate()}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

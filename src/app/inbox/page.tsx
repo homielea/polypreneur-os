@@ -20,9 +20,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { getJSON, sendJSON } from "@/lib/client";
-import type { AgentJob } from "@/lib/types";
+import type { AgentJob, Venture } from "@/lib/types";
 import { FORMAT_LABEL } from "@/lib/agents/repurposer/prompt";
 import { cn } from "@/lib/utils";
 
@@ -33,12 +40,47 @@ const AGENT_LABEL: Record<string, string> = {
 
 function JobTags({ job }: { job: AgentJob }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Badge variant="secondary">{AGENT_LABEL[job.agent] ?? job.agent}</Badge>
       {job.format && (
         <Badge variant="outline">{FORMAT_LABEL[job.format]}</Badge>
       )}
+      <VentureSelect job={job} />
     </div>
+  );
+}
+
+function VentureSelect({ job }: { job: AgentJob }) {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["ventures-list"],
+    queryFn: () => getJSON<{ ventures: Venture[] }>("/api/ventures"),
+  });
+  const set = useMutation({
+    mutationFn: (ventureId: string | null) =>
+      sendJSON(`/api/agent-jobs/${job.id}`, "PATCH", { venture_id: ventureId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agent-jobs"] });
+      qc.invalidateQueries({ queryKey: ["publications"] });
+    },
+  });
+  return (
+    <Select
+      value={job.venture_id ?? "none"}
+      onValueChange={(v) => set.mutate(v === "none" ? null : v)}
+    >
+      <SelectTrigger className="h-7 w-44 text-xs">
+        <SelectValue placeholder="Assign venture" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">No venture</SelectItem>
+        {(data?.ventures ?? []).map((v) => (
+          <SelectItem key={v.id} value={v.id}>
+            {v.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
