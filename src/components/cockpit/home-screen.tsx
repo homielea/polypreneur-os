@@ -21,6 +21,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { LeverageBreakdown } from "@/components/cockpit/leverage-breakdown";
+import { AnalystSignals } from "@/components/cockpit/analyst-signals";
 import { getJSON, sendJSON } from "@/lib/client";
 import type { HomePayload } from "@/lib/leverage/home-types";
 import type { LeverageResult, RankedTask } from "@/lib/leverage/score";
@@ -273,6 +274,9 @@ export function HomeScreen() {
           ))}
         </section>
       )}
+
+      {/* ANALYST SIGNAL — ventures going cold */}
+      <AnalystSignals />
 
       {/* FULL INSPECTABLE RANKING */}
       <InspectableRanking ranked={data.ranked} />

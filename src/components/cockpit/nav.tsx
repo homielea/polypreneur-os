@@ -10,6 +10,7 @@ import {
   Lightbulb,
   Inbox,
   Send,
+  LineChart,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ const NAV = [
   { href: "/vault", label: "Idea Vault", icon: Lightbulb, hint: "Parked ideas" },
   { href: "/inbox", label: "Approval Inbox", icon: Inbox, hint: "Agent drafts" },
   { href: "/distribution", label: "Distribution", icon: Send, hint: "Publish approved content" },
+  { href: "/analyst", label: "Analyst", icon: LineChart, hint: "Momentum & neglect radar" },
   { href: "/settings", label: "Settings", icon: Settings, hint: "Weights & cadence" },
 ];
 

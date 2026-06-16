@@ -70,6 +70,11 @@ npm run scribe:scan  # scan the Drive folder + content-flagged check-ins -> jobs
   v1 (the human is the router); v2 can auto-chain.
 - **Marketing distribution** — the first write/outbound capability, gated and
   env-driven (Beehiiv draft-create; `social` reserved).
+- **The Analyst** — transparent, rule-based signals: per-venture momentum (7d vs
+  prior 7d), a neglect radar ("going cold" before a venture dies, also surfaced
+  on Today), and content-performance metrics (Beehiiv ingest; seeded otherwise).
+  Surfaces signals for the operator to judge — not the inner-state correlation
+  engine (still later; this is collect-and-surface, no black box).
 
 ## Architecture notes
 

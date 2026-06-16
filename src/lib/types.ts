@@ -137,6 +137,20 @@ export interface Publication {
   updated_at: string;
 }
 
+/** Named performance metric (the Analyst). Shares the date axis. */
+export type MetricSource = "beehiiv" | "youtube" | "manual";
+
+export interface Metric {
+  id: string;
+  venture_id: string | null; // null = account-level
+  source: MetricSource;
+  name: string; // subscribers / opens / clicks / views / ...
+  value: number;
+  date: string; // YYYY-MM-DD
+  ref: string | null; // external id (post/video) for idempotent ingest
+  created_at: string;
+}
+
 /** Key–value operator settings (weight overrides, agent cadence, pinned move). */
 export interface AppSetting {
   key: string;
@@ -153,6 +167,7 @@ export interface DbSchema {
   agent_job: AgentJob;
   idea: Idea;
   publication: Publication;
+  metric: Metric;
   app_setting: AppSetting;
 }
 

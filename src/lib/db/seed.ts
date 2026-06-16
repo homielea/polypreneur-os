@@ -101,6 +101,14 @@ export function buildSeed(): Store {
     ],
 
     publication: [],
+
+    metric: [
+      // Sample newsletter metrics so the Analyst has data without live creds.
+      { id: "m1", venture_id: vNewsletter, source: "beehiiv", name: "subscribers", value: 1240, date: ymd(-9), ref: null, created_at: iso(-9) },
+      { id: "m2", venture_id: vNewsletter, source: "beehiiv", name: "subscribers", value: 1268, date: ymd(-2), ref: null, created_at: iso(-2) },
+      { id: "m3", venture_id: vNewsletter, source: "beehiiv", name: "open_rate", value: 0.47, date: ymd(-9), ref: "post_abc", created_at: iso(-9) },
+    ],
+
     app_setting: [],
   };
 }
