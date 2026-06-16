@@ -23,7 +23,24 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { getJSON, sendJSON } from "@/lib/client";
 import type { AgentJob } from "@/lib/types";
+import { FORMAT_LABEL } from "@/lib/agents/repurposer/prompt";
 import { cn } from "@/lib/utils";
+
+const AGENT_LABEL: Record<string, string> = {
+  scribe: "Scribe",
+  repurposer: "Repurposer",
+};
+
+function JobTags({ job }: { job: AgentJob }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Badge variant="secondary">{AGENT_LABEL[job.agent] ?? job.agent}</Badge>
+      {job.format && (
+        <Badge variant="outline">{FORMAT_LABEL[job.format]}</Badge>
+      )}
+    </div>
+  );
+}
 
 export default function InboxPage() {
   const qc = useQueryClient();
@@ -44,9 +61,9 @@ export default function InboxPage() {
   });
 
   const runAll = useMutation({
-    mutationFn: () => sendJSON<{ ran: number }>("/api/scribe/run", "POST"),
+    mutationFn: () => sendJSON<{ ran: number }>("/api/agents/run", "POST"),
     onSuccess: (r) => {
-      toast.success(`Scribe ran on ${r.ran} job(s)`);
+      toast.success(`Agents ran on ${r.ran} job(s)`);
       invalidate();
     },
     onError: (e) => toast.error((e as Error).message),
@@ -82,7 +99,7 @@ export default function InboxPage() {
             disabled={runAll.isPending || pending.length === 0}
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            Run Scribe ({pending.length} pending)
+            Run agents ({pending.length} pending)
           </Button>
         </div>
       </header>
@@ -185,9 +202,9 @@ function SourceDisclosure({ job }: { job: AgentJob }) {
 
 function PendingCard({ job, onChanged }: { job: AgentJob; onChanged: () => void }) {
   const run = useMutation({
-    mutationFn: () => sendJSON("/api/scribe/run", "POST", { jobId: job.id }),
+    mutationFn: () => sendJSON("/api/agents/run", "POST", { jobId: job.id }),
     onSuccess: () => {
-      toast.success("Scribe drafted");
+      toast.success("Draft ready");
       onChanged();
     },
     onError: (e) => toast.error((e as Error).message),
@@ -196,11 +213,12 @@ function PendingCard({ job, onChanged }: { job: AgentJob; onChanged: () => void 
     <Card>
       <CardContent className="space-y-3 py-4">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
-            queued {formatDistanceToNow(parseISO(job.created_at), { addSuffix: true })}
-          </span>
+          <JobTags job={job} />
           <Badge variant="outline">pending</Badge>
         </div>
+        <span className="text-xs text-muted-foreground">
+          queued {formatDistanceToNow(parseISO(job.created_at), { addSuffix: true })}
+        </span>
         <p className="line-clamp-3 whitespace-pre-wrap text-sm text-muted-foreground">
           {job.input_text}
         </p>
@@ -209,7 +227,7 @@ function PendingCard({ job, onChanged }: { job: AgentJob; onChanged: () => void 
         )}
         <div className="flex gap-2">
           <Button size="sm" onClick={() => run.mutate()} disabled={run.isPending}>
-            <Sparkles className="mr-1 h-3 w-3" /> Run Scribe
+            <Sparkles className="mr-1 h-3 w-3" /> Run
           </Button>
           <DeleteButton id={job.id} onChanged={onChanged} />
         </div>
@@ -250,6 +268,7 @@ function ReviewCard({ job, onChanged }: { job: AgentJob; onChanged: () => void }
           </CardTitle>
           <Badge>awaiting approval</Badge>
         </div>
+        <JobTags job={job} />
       </CardHeader>
       <CardContent className="space-y-3">
         <SourceDisclosure job={job} />
@@ -299,6 +318,23 @@ function ReviewCard({ job, onChanged }: { job: AgentJob; onChanged: () => void }
 }
 
 function ApprovedCard({ job, onChanged }: { job: AgentJob; onChanged: () => void }) {
+  const repurpose = useMutation({
+    mutationFn: () =>
+      sendJSON<{ created: number; skippedExisting: number }>(
+        `/api/agent-jobs/${job.id}/repurpose`,
+        "POST",
+      ),
+    onSuccess: (r) => {
+      toast.success(
+        r.created > 0
+          ? `Queued ${r.created} repurpose job(s) — run them below`
+          : "Already repurposed",
+      );
+      onChanged();
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   return (
     <Card className="border-emerald-200">
       <CardHeader className="pb-2">
@@ -308,6 +344,7 @@ function ApprovedCard({ job, onChanged }: { job: AgentJob; onChanged: () => void
           </CardTitle>
           <Badge className="bg-emerald-600">ready to ship</Badge>
         </div>
+        <JobTags job={job} />
       </CardHeader>
       <CardContent className="space-y-3">
         <article className="prose prose-sm max-w-none whitespace-pre-wrap font-serif">
@@ -315,9 +352,21 @@ function ApprovedCard({ job, onChanged }: { job: AgentJob; onChanged: () => void
         </article>
         <p className="text-xs text-muted-foreground">
           Publishing to the content engine (Beehiiv) is stubbed in v1 — copy the
-          approved script out, or wire the integration later.
+          approved piece out, or wire the integration later.
         </p>
-        <DeleteButton id={job.id} onChanged={onChanged} />
+        <div className="flex items-center gap-2">
+          {job.agent === "scribe" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => repurpose.mutate()}
+              disabled={repurpose.isPending}
+            >
+              <Sparkles className="mr-1 h-3 w-3" /> Repurpose
+            </Button>
+          )}
+          <DeleteButton id={job.id} onChanged={onChanged} />
+        </div>
       </CardContent>
     </Card>
   );

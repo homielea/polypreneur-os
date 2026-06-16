@@ -66,3 +66,13 @@ export async function listVoiceNotes(): Promise<DriveVoiceNote[]> {
   }
   return notes;
 }
+
+/** Download a Drive file's raw bytes (used to fetch audio for transcription). */
+export async function downloadFile(fileId: string): Promise<Buffer> {
+  const drive = driveClient();
+  const res = await drive.files.get(
+    { fileId, alt: "media" },
+    { responseType: "arraybuffer" },
+  );
+  return Buffer.from(res.data as ArrayBuffer);
+}

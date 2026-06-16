@@ -76,17 +76,28 @@ export interface Task {
   leverage_score: number | null; // refreshed snapshot; ranking always recomputes live
 }
 
-export type AgentName = "scribe";
+export type AgentName = "scribe" | "repurposer";
 export type AgentJobStatus =
   | "pending"
   | "awaiting_approval"
   | "approved"
   | "rejected";
 
+/**
+ * Output format for an agent job. `null` for the Scribe (one canonical draft).
+ * The Repurposer fans one approved piece out into several derivative formats,
+ * each its own approval-gated job.
+ */
+export type JobFormat =
+  | "short_form_script"
+  | "newsletter_section"
+  | "social_posts";
+
 export interface AgentJob {
   id: string;
   agent: AgentName;
-  input_ref: string; // pointer to source (e.g. drive file id / checkin id)
+  format: JobFormat | null; // derivative format (Repurposer); null for the Scribe
+  input_ref: string; // pointer to source (e.g. drive file id / checkin id / job:<id>)
   input_text: string; // resolved source text the agent worked from
   output: string; // the agent's draft (immutable record of what it produced)
   edited_output: string | null; // operator edits applied before approval

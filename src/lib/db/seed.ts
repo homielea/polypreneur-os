@@ -82,6 +82,7 @@ export function buildSeed(): Store {
       {
         id: "j1",
         agent: "scribe",
+        format: null,
         input_ref: "checkin:c3",
         input_text:
           "Walk-and-talk idea about the Great Inversion landed. As AI gets cheaper at execution, the rare thing becomes judgment and taste. I keep coming back to this when I decide what to work on each morning.",

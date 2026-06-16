@@ -13,6 +13,9 @@ export const env = {
     "",
   anthropicKey: process.env.ANTHROPIC_API_KEY ?? "",
   anthropicModel: process.env.ANTHROPIC_MODEL ?? "claude-opus-4-8",
+  // Transcription (voice notes -> text). Provider-only; the agent stays on Claude.
+  openaiKey: process.env.OPENAI_API_KEY ?? "",
+  whisperModel: process.env.WHISPER_MODEL ?? "whisper-1",
   notionKey: process.env.NOTION_API_KEY ?? "",
   githubToken: process.env.GITHUB_TOKEN ?? "",
   githubRepo: process.env.GITHUB_REPO ?? "leaos-hq",
@@ -25,6 +28,7 @@ export const env = {
 
 export const hasSupabase = Boolean(env.supabaseUrl && env.supabaseKey);
 export const hasAnthropic = Boolean(env.anthropicKey);
+export const hasWhisper = Boolean(env.openaiKey);
 export const hasNotion = Boolean(env.notionKey);
 export const hasGitHub = Boolean(env.githubToken && env.githubOwner);
 export const hasGoogle = Boolean(env.googleClientEmail && env.googlePrivateKey);

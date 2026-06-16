@@ -11,7 +11,11 @@
 
 import "server-only";
 import { insert, list, newId, nowIso } from "@/lib/db";
-import { listVoiceNotes } from "@/lib/integrations/drive";
+import { downloadFile, listVoiceNotes } from "@/lib/integrations/drive";
+import {
+  transcribeAudio,
+  transcriptionConfigured,
+} from "@/lib/agents/scribe/transcribe";
 import type { AgentJob } from "@/lib/types";
 
 export interface IntakeResult {
@@ -41,14 +45,24 @@ export async function runIntake(): Promise<IntakeResult> {
       continue;
     }
     seenRefs.add(ref);
-    jobs.push(
-      makeJob(
-        ref,
-        note.needsTranscription
-          ? `[Audio voice note "${note.name}" — transcription not configured. Paste the transcript here, then re-run the Scribe.]`
-          : (note.text ?? ""),
-      ),
-    );
+
+    let text: string;
+    let error: string | null = null;
+    if (!note.needsTranscription) {
+      text = note.text ?? "";
+    } else if (transcriptionConfigured) {
+      try {
+        const audio = await downloadFile(note.id);
+        text = await transcribeAudio(audio, note.name);
+      } catch (e) {
+        text = `[Audio voice note "${note.name}" — transcription failed. Paste the transcript here, then re-run.]`;
+        error = e instanceof Error ? e.message : "Transcription failed.";
+      }
+    } else {
+      text = `[Audio voice note "${note.name}" — transcription not configured (set OPENAI_API_KEY). Paste the transcript here, then re-run.]`;
+      error = "Transcription not configured.";
+    }
+    jobs.push(makeJob(ref, text, error));
     fromDrive++;
   }
 
@@ -80,17 +94,22 @@ export async function runIntake(): Promise<IntakeResult> {
   };
 }
 
-function makeJob(inputRef: string, inputText: string): AgentJob {
+function makeJob(
+  inputRef: string,
+  inputText: string,
+  error: string | null = null,
+): AgentJob {
   const ts = nowIso();
   return {
     id: newId(),
     agent: "scribe",
+    format: null,
     input_ref: inputRef,
     input_text: inputText,
     output: "",
     edited_output: null,
     status: "pending",
-    error: null,
+    error,
     created_at: ts,
     updated_at: ts,
   };
