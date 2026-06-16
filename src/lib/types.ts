@@ -117,6 +117,26 @@ export interface Idea {
   status: IdeaStatus;
 }
 
+/** Distribution channels (§ marketing). `manual` always works; others env-gated. */
+export type Channel = "manual" | "beehiiv" | "social";
+export type PublicationStatus =
+  | "scheduled"
+  | "published"
+  | "failed"
+  | "canceled";
+
+export interface Publication {
+  id: string;
+  job_id: string; // the approved agent_job being published
+  channel: Channel;
+  status: PublicationStatus;
+  scheduled_for: string | null; // ISO; null = publish immediately
+  external_ref: string | null; // e.g. Beehiiv post id
+  error: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 /** Key–value operator settings (weight overrides, agent cadence, pinned move). */
 export interface AppSetting {
   key: string;
@@ -132,6 +152,7 @@ export interface DbSchema {
   task: Task;
   agent_job: AgentJob;
   idea: Idea;
+  publication: Publication;
   app_setting: AppSetting;
 }
 

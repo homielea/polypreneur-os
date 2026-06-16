@@ -13,9 +13,6 @@ export const env = {
     "",
   anthropicKey: process.env.ANTHROPIC_API_KEY ?? "",
   anthropicModel: process.env.ANTHROPIC_MODEL ?? "claude-opus-4-8",
-  // Transcription (voice notes -> text). Provider-only; the agent stays on Claude.
-  openaiKey: process.env.OPENAI_API_KEY ?? "",
-  whisperModel: process.env.WHISPER_MODEL ?? "whisper-1",
   notionKey: process.env.NOTION_API_KEY ?? "",
   githubToken: process.env.GITHUB_TOKEN ?? "",
   githubRepo: process.env.GITHUB_REPO ?? "leaos-hq",
@@ -23,13 +20,21 @@ export const env = {
   googleClientEmail: process.env.GOOGLE_CLIENT_EMAIL ?? "",
   googlePrivateKey: (process.env.GOOGLE_PRIVATE_KEY ?? "").replace(/\\n/g, "\n"),
   googleCalendarId: process.env.GOOGLE_CALENDAR_ID ?? "",
+  // Voice-note transcription reuses the Google service account (Speech-to-Text).
+  googleSttLanguage: process.env.GOOGLE_STT_LANGUAGE ?? "en-US",
   driveFolderId: process.env.DRIVE_WATCH_FOLDER_ID ?? "",
+  // Beehiiv newsletter publishing (write integration).
+  beehiivApiKey: process.env.BEEHIIV_API_KEY ?? "",
+  beehiivPublicationId: process.env.BEEHIIV_PUBLICATION_ID ?? "",
 } as const;
 
 export const hasSupabase = Boolean(env.supabaseUrl && env.supabaseKey);
 export const hasAnthropic = Boolean(env.anthropicKey);
-export const hasWhisper = Boolean(env.openaiKey);
 export const hasNotion = Boolean(env.notionKey);
 export const hasGitHub = Boolean(env.githubToken && env.githubOwner);
 export const hasGoogle = Boolean(env.googleClientEmail && env.googlePrivateKey);
 export const hasDrive = hasGoogle && Boolean(env.driveFolderId);
+// Speech-to-Text reuses the Google service account (needs the Speech API enabled
+// + the cloud-platform scope granted to the service account).
+export const hasTranscription = hasGoogle;
+export const hasBeehiiv = Boolean(env.beehiivApiKey && env.beehiivPublicationId);

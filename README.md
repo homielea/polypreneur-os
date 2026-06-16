@@ -52,9 +52,24 @@ npm run scribe:scan  # scan the Drive folder + content-flagged check-ins -> jobs
 - **Ventures** — the 80/20 Enforcer: focus caps (2 primary + 1 experiment); the
   system says no by design.
 - **Idea Vault** — capture, and promote-to-venture (cap-enforced).
-- **Approval Inbox** — every Scribe draft lands here; nothing ships without your
-  approval.
+- **Approval Inbox** — every agent draft lands here; nothing ships without your
+  approval. Approved Lea's Lessons can be **repurposed** (Repurposer agent →
+  short-form script, newsletter section, social posts — each its own approval).
+- **Distribution** — get approved pieces out through an approval-gated, env-gated
+  write path. `manual` (mark-exported) always works; `beehiiv` creates a *draft*
+  post (the final send stays a human step). Publish now or schedule.
 - **Settings** — leverage weights, Scribe cadence, integration status + sync.
+
+## Beyond the v1 spec (built in this branch)
+
+- **Voice-note transcription** — audio dropped in the Drive folder is transcribed
+  to text (Google Speech-to-Text, reusing the Google service account) and fed to
+  the Scribe. Swappable behind one adapter; the agents stay on Claude.
+- **The Repurposer** — the second agent, proving the rails generalize: one
+  approved piece → derivative formats, each approval-gated. Operator-triggered in
+  v1 (the human is the router); v2 can auto-chain.
+- **Marketing distribution** — the first write/outbound capability, gated and
+  env-driven (Beehiiv draft-create; `social` reserved).
 
 ## Architecture notes
 

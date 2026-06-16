@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   Lightbulb,
   Inbox,
+  Send,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ const NAV = [
   { href: "/ventures", label: "Ventures", icon: LayoutGrid, hint: "80/20 focus cap" },
   { href: "/vault", label: "Idea Vault", icon: Lightbulb, hint: "Parked ideas" },
   { href: "/inbox", label: "Approval Inbox", icon: Inbox, hint: "Agent drafts" },
+  { href: "/distribution", label: "Distribution", icon: Send, hint: "Publish approved content" },
   { href: "/settings", label: "Settings", icon: Settings, hint: "Weights & cadence" },
 ];
 

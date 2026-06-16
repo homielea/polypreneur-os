@@ -59,7 +59,7 @@ export async function runIntake(): Promise<IntakeResult> {
         error = e instanceof Error ? e.message : "Transcription failed.";
       }
     } else {
-      text = `[Audio voice note "${note.name}" — transcription not configured (set OPENAI_API_KEY). Paste the transcript here, then re-run.]`;
+      text = `[Audio voice note "${note.name}" — transcription not configured (Google Speech-to-Text). Paste the transcript here, then re-run.]`;
       error = "Transcription not configured.";
     }
     jobs.push(makeJob(ref, text, error));

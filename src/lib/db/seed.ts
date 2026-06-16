@@ -100,6 +100,7 @@ export function buildSeed(): Store {
       { id: "i2", title: "Short-form 'Lessons in 60s' series", note: "Repurpose newsletter closers into vertical video.", captured_at: iso(-5), status: "vault" },
     ],
 
+    publication: [],
     app_setting: [],
   };
 }
