@@ -1,5 +1,6 @@
 import { WeightsEditor } from "@/components/cockpit/weights-editor";
 import { CadenceEditor } from "@/components/cockpit/cadence-editor";
+import { IntegrationsPanel } from "@/components/cockpit/integrations-panel";
 
 export default function SettingsPage() {
   return (
@@ -13,6 +14,7 @@ export default function SettingsPage() {
       </header>
       <WeightsEditor />
       <CadenceEditor />
+      <IntegrationsPanel />
     </div>
   );
 }
