@@ -71,10 +71,13 @@ npm run scribe:scan  # scan the Drive folder + content-flagged check-ins -> jobs
   v1 (the human is the router); v2 can auto-chain.
 - **Marketing distribution** — per-venture channel connections (Beehiiv,
   Substack, X, LinkedIn, Instagram, …), a multi-channel composer, and a
-  scheduled outbox. Channels are placeholders in v1; real multi-network delivery
-  is meant to be delegated to one aggregator adapter (e.g. self-hosted Postiz),
-  not rebuilt here. Content is linked to a venture so distribution and the
-  Analyst are project-scoped.
+  scheduled outbox. Delivery is a swappable backend behind one interface
+  (`src/lib/content-engine/delivery`): **Blotato** is the wired multi-network
+  send adapter (env-gated; social/video deliver live when `BLOTATO_API_KEY` is
+  set, "mark as posted" otherwise), Beehiiv does real newsletter drafts, and
+  self-hosted **Postiz** is the intended OSS backend for the extracted product.
+  Content is linked to a venture, so distribution and the Analyst are
+  project-scoped. See `src/lib/content-engine/README.md` for the extraction plan.
 - **The Analyst** — transparent, rule-based signals: per-venture momentum (7d vs
   prior 7d), a neglect radar ("going cold" before a venture dies, also surfaced
   on Today), and content-performance metrics (Beehiiv ingest; seeded otherwise).

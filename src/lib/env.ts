@@ -26,6 +26,8 @@ export const env = {
   // Beehiiv newsletter publishing (write integration).
   beehiivApiKey: process.env.BEEHIIV_API_KEY ?? "",
   beehiivPublicationId: process.env.BEEHIIV_PUBLICATION_ID ?? "",
+  // Blotato — multi-platform delivery aggregator (the social/video send backend).
+  blotatoApiKey: process.env.BLOTATO_API_KEY ?? "",
 } as const;
 
 export const hasSupabase = Boolean(env.supabaseUrl && env.supabaseKey);
@@ -38,3 +40,6 @@ export const hasDrive = hasGoogle && Boolean(env.driveFolderId);
 // + the cloud-platform scope granted to the service account).
 export const hasTranscription = hasGoogle;
 export const hasBeehiiv = Boolean(env.beehiivApiKey && env.beehiivPublicationId);
+// Blotato delivery backend. When set, social/video channels deliver for real;
+// otherwise they fall back to "mark as posted" placeholders.
+export const hasBlotato = Boolean(env.blotatoApiKey);

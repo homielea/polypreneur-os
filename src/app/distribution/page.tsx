@@ -68,6 +68,10 @@ export default function DistributionPage() {
     queryKey: ["ventures-list"],
     queryFn: () => getJSON<{ ventures: Venture[] }>("/api/ventures"),
   });
+  const status = useQuery({
+    queryKey: ["distribution-status"],
+    queryFn: () => getJSON<{ blotato: boolean; beehiiv: boolean }>("/api/distribution/status"),
+  });
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["publications"] });
@@ -79,14 +83,28 @@ export default function DistributionPage() {
 
   return (
     <div className="space-y-8">
-      <header>
+      <header className="space-y-2">
         <h1 className="text-2xl font-bold">Distribution</h1>
         <p className="text-muted-foreground">
           Connect channels per venture, compose once, schedule everywhere. You
-          approve and schedule; agents take over the grunt-work in v2. Most
-          channels are placeholders in v1 — Beehiiv creates a real draft; others
-          are “mark as posted” until a delivery adapter is wired.
+          approve and schedule; agents take over the grunt-work in v2.
         </p>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-foreground">Delivery backend:</span>
+          <Badge
+            className={cn(
+              "text-white",
+              status.data?.blotato ? "bg-emerald-600" : "bg-amber-500",
+            )}
+          >
+            {status.data?.blotato
+              ? "Blotato connected — social/video deliver live"
+              : "Blotato not connected — social/video are mark-as-posted"}
+          </Badge>
+          <Badge variant="outline">
+            Beehiiv {status.data?.beehiiv ? "connected" : "draft (needs creds)"}
+          </Badge>
+        </div>
       </header>
 
       <ChannelGrid

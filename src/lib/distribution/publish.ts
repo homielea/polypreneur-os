@@ -12,8 +12,7 @@
 import "server-only";
 import { insert, list, newId, nowIso, update } from "@/lib/db";
 import type { AgentJob, Publication } from "@/lib/types";
-import { platformDef } from "./platforms";
-import { publishToBeehiiv } from "./beehiiv";
+import { resolveDeliveryAdapter } from "@/lib/content-engine/delivery/registry";
 
 function contentOf(job: AgentJob): string {
   return job.edited_output ?? job.output;
@@ -33,14 +32,19 @@ export async function sendPublication(pub: Publication): Promise<Publication> {
   try {
     const job = await getApprovedJob(pub.job_id);
     const content = contentOf(job);
-    const adapter = platformDef(pub.channel).adapter;
 
-    let externalRef: string | null = null;
-    if (adapter === "beehiiv") {
-      const r = await publishToBeehiiv(content);
-      externalRef = r.externalRef;
-    }
-    // manual / placeholder: operator-confirmed "posted" — nothing to call.
+    const connection = pub.channel_connection_id
+      ? (await list("channel_connection")).find(
+          (c) => c.id === pub.channel_connection_id,
+        ) ?? null
+      : null;
+
+    const adapter = resolveDeliveryAdapter(pub.channel);
+    const { externalRef } = await adapter.deliver({
+      content,
+      connection,
+      platform: pub.channel,
+    });
 
     return update("publication", pub.id, {
       status: "published",
