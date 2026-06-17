@@ -81,8 +81,10 @@ npm run scribe:scan  # scan the Drive folder + content-flagged check-ins -> jobs
 - **Faceless video (Studio)** — the Producer agent turns an approved piece into a
   video package (title, voiceover script, scene/b-roll plan, thumbnail concept);
   you approve before render/distribute; rendering is a **pluggable backend
-  registry** (stub wired; HeyGen / Veo3 / Runway / Blotato scaffolded — add a
-  vendor with one adapter); approved videos publish via the Blotato media path.
+  registry** — **HeyGen (avatar/UGC) is wired** (async submit→poll; needs
+  `HEYGEN_API_KEY` + `HEYGEN_AVATAR_ID` + `HEYGEN_VOICE_ID`), with Veo3 / Runway /
+  Blotato scaffolded and a stub fallback; approved videos publish via the Blotato
+  media path.
 - **Extractable content engine** — `src/lib/content-engine` now depends only on
   ports (`StorePort` / `LlmPort` / `EngineConfig`); the host wires them in
   `src/lib/engine.ts`. The engine has no venture/db/env/SDK imports, so it can be

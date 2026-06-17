@@ -175,6 +175,7 @@ export interface VideoProduction {
   scene_plan: string; // JSON array of scene/b-roll lines
   thumbnail_concept: string;
   video_url: string | null; // rendered asset (delegated backend)
+  render_job_id: string | null; // in-flight async render job (e.g. HeyGen video_id)
   backend: string | null;
   status: VideoProductionStatus;
   error: string | null;

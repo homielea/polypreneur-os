@@ -35,7 +35,7 @@ engine treats the id as opaque (no venture logic anywhere inside).
 | Transcription | `agents/scribe/transcribe.ts` | Google STT (swap: Whisper/Deepgram) |
 | Drafting / Producer | `LlmPort` | Claude (locked voice — stays in PP-OS) |
 | **Delivery** | `delivery/registry.ts` `resolveDeliveryAdapter(config, platform)` | **Blotato** (live), mark-as-posted, Beehiiv; **Postiz** for the OSS/self-host product |
-| **Video render** | `video/render/registry.ts` `resolveRenderBackend(config)` | stub (wired); **HeyGen / Veo3 / Runway / Blotato** (scaffolded seams) |
+| **Video render** | `video/render/registry.ts` `resolveRenderBackend(config)` | **HeyGen** (wired, async submit→poll), stub (wired); Veo3 / Runway / Blotato (scaffolded) |
 | Metrics | `analyst/metrics.ts` sources | Beehiiv (stub others) |
 
 Adding a render or delivery backend = one adapter + a line in its registry.

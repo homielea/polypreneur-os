@@ -41,7 +41,7 @@ export interface EngineConfig {
   blotatoApiKey?: string;
   beehiiv?: { apiKey: string; publicationId: string };
   // Faceless-video render backends (Phase 2/3; add vendors freely).
-  heygenApiKey?: string;
+  heygen?: { apiKey: string; avatarId?: string; voiceId?: string; width?: number; height?: number };
   runwayApiKey?: string;
   veoApiKey?: string;
 }

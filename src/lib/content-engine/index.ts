@@ -18,10 +18,12 @@ export {
   createProduction,
   generatePackage,
   renderProduction,
+  pollProduction,
   updateProduction,
 } from "./video/productions";
 export {
   resolveRenderBackend,
+  getRenderBackend,
   listRenderBackends,
 } from "./video/render/registry";
 export type {

@@ -7,7 +7,7 @@
 import type { EngineContext } from "@/lib/content-engine/ports";
 import type { AgentJob, VideoProduction } from "@/lib/types";
 import { produceVideoPackage } from "./producer";
-import { resolveRenderBackend } from "./render/registry";
+import { getRenderBackend, resolveRenderBackend } from "./render/registry";
 
 function scriptOf(job: AgentJob): string {
   return job.edited_output ?? job.output;
@@ -33,6 +33,7 @@ export async function createProduction(
     scene_plan: "[]",
     thumbnail_concept: "",
     video_url: null,
+    render_job_id: null,
     backend: null,
     status: "draft",
     error: null,
@@ -84,7 +85,7 @@ export async function renderProduction(
   const prod = await getProduction(ctx, id);
   try {
     const backend = resolveRenderBackend(ctx.config, preferredBackend);
-    const { videoUrl, backend: used } = await backend.render(
+    const result = await backend.render(
       {
         title: prod.title,
         voiceoverScript: prod.voiceover_script,
@@ -93,15 +94,55 @@ export async function renderProduction(
       },
       ctx.config,
     );
+    if (result.status === "ready" && result.videoUrl) {
+      return ctx.store.update("video_production", id, {
+        video_url: result.videoUrl,
+        render_job_id: null,
+        backend: result.backend,
+        error: null,
+        updated_at: ctx.store.now(),
+      });
+    }
+    // async backend (e.g. HeyGen): track the job, poll later
     return ctx.store.update("video_production", id, {
-      video_url: videoUrl,
-      backend: used,
+      render_job_id: result.jobId ?? null,
+      video_url: null,
+      backend: result.backend,
       error: null,
       updated_at: ctx.store.now(),
     });
   } catch (err) {
     return ctx.store.update("video_production", id, {
       error: err instanceof Error ? err.message : "Render failed",
+      updated_at: ctx.store.now(),
+    });
+  }
+}
+
+/** Poll an in-flight async render (HeyGen) and fill the asset when ready. */
+export async function pollProduction(
+  ctx: EngineContext,
+  id: string,
+): Promise<VideoProduction> {
+  const prod = await getProduction(ctx, id);
+  if (!prod.render_job_id || !prod.backend) return prod;
+  const backend = getRenderBackend(prod.backend);
+  if (!backend?.poll) return prod;
+  try {
+    const result = await backend.poll(prod.render_job_id, ctx.config);
+    if (result.status === "ready" && result.videoUrl) {
+      return ctx.store.update("video_production", id, {
+        video_url: result.videoUrl,
+        render_job_id: null,
+        error: null,
+        updated_at: ctx.store.now(),
+      });
+    }
+    return prod; // still rendering
+  } catch (err) {
+    return ctx.store.update("video_production", id, {
+      render_job_id: null,
+      error: err instanceof Error ? err.message : "Render poll failed",
       updated_at: ctx.store.now(),
     });
   }

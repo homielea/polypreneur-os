@@ -30,6 +30,8 @@ export const env = {
   blotatoApiKey: process.env.BLOTATO_API_KEY ?? "",
   // Faceless-video render backends (pluggable; add vendors freely).
   heygenApiKey: process.env.HEYGEN_API_KEY ?? "",
+  heygenAvatarId: process.env.HEYGEN_AVATAR_ID ?? "",
+  heygenVoiceId: process.env.HEYGEN_VOICE_ID ?? "",
   runwayApiKey: process.env.RUNWAY_API_KEY ?? "",
   veoApiKey: process.env.VEO_API_KEY ?? "",
 } as const;

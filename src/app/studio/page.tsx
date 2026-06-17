@@ -161,12 +161,14 @@ function ProductionCard({
         a === "generate"
           ? "Package generated"
           : a === "render"
-            ? "Rendered"
-            : a === "approve"
-              ? "Approved"
-              : a === "reject"
-                ? "Rejected"
-                : "Saved",
+            ? "Render started"
+            : a === "poll"
+              ? "Refreshed"
+              : a === "approve"
+                ? "Approved"
+                : a === "reject"
+                  ? "Rejected"
+                  : "Saved",
       );
       onChanged();
     },
@@ -235,6 +237,19 @@ function ProductionCard({
                   {prod.video_url}
                 </a>
               </p>
+            ) : prod.render_job_id ? (
+              <div className="flex items-center gap-2 text-xs text-sky-700">
+                <span>Rendering on {prod.backend}…</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => act.mutate({ action: "poll" })}
+                  disabled={act.isPending}
+                >
+                  <RefreshCw className="mr-1 h-3 w-3" /> Refresh
+                </Button>
+              </div>
             ) : (
               <p className="text-xs text-muted-foreground">Not rendered yet.</p>
             )}

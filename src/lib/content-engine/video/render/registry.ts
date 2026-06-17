@@ -22,6 +22,10 @@ const BACKENDS: RenderBackend[] = [
   stubRender,
 ];
 
+export function getRenderBackend(key: string): RenderBackend | undefined {
+  return BACKENDS.find((b) => b.key === key);
+}
+
 export function resolveRenderBackend(
   config: EngineConfig,
   preferred?: string,

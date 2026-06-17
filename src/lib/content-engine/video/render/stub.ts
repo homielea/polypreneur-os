@@ -10,6 +10,10 @@ export const stubRender: RenderBackend = {
   isConfigured: () => true,
   async render(input) {
     const slug = encodeURIComponent(input.title.slice(0, 40) || "faceless");
-    return { videoUrl: `https://example.invalid/faceless/${slug}.mp4`, backend: "stub" };
+    return {
+      status: "ready",
+      videoUrl: `https://example.invalid/faceless/${slug}.mp4`,
+      backend: "stub",
+    };
   },
 };

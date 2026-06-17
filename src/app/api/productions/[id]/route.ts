@@ -4,6 +4,7 @@ import { remove } from "@/lib/db";
 import { createEngineContext } from "@/lib/engine";
 import {
   generatePackage,
+  pollProduction,
   renderProduction,
   updateProduction,
 } from "@/lib/content-engine/video/productions";
@@ -22,7 +23,7 @@ export async function PATCH(
   { params }: { params: { id: string } },
 ) {
   const body = (await req.json().catch(() => ({}))) as {
-    action?: "generate" | "render" | "approve" | "reject" | "reset";
+    action?: "generate" | "render" | "poll" | "approve" | "reject" | "reset";
     backend?: string;
     title?: string;
     voiceover_script?: string;
@@ -35,6 +36,8 @@ export async function PATCH(
       return handler(() => generatePackage(ctx, params.id));
     case "render":
       return handler(() => renderProduction(ctx, params.id, body.backend));
+    case "poll":
+      return handler(() => pollProduction(ctx, params.id));
     case "approve":
       return handler(() =>
         updateProduction(ctx, params.id, { ...editFields(body), status: "approved" }),

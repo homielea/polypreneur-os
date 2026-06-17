@@ -49,7 +49,13 @@ export function engineConfig(): EngineConfig {
       env.beehiivApiKey && env.beehiivPublicationId
         ? { apiKey: env.beehiivApiKey, publicationId: env.beehiivPublicationId }
         : undefined,
-    heygenApiKey: env.heygenApiKey || undefined,
+    heygen: env.heygenApiKey
+      ? {
+          apiKey: env.heygenApiKey,
+          avatarId: env.heygenAvatarId || undefined,
+          voiceId: env.heygenVoiceId || undefined,
+        }
+      : undefined,
     runwayApiKey: env.runwayApiKey || undefined,
     veoApiKey: env.veoApiKey || undefined,
   };

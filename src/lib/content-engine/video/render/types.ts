@@ -8,14 +8,17 @@ export interface RenderInput {
 }
 
 export interface RenderResult {
-  videoUrl: string;
+  /** "ready" = videoUrl present; "pending" = async job submitted (poll jobId). */
+  status: "ready" | "pending";
+  videoUrl?: string;
+  jobId?: string;
   backend: string;
 }
 
 /**
  * A faceless-video render backend. `wired` distinguishes a functional backend
- * (stub today) from a scaffolded vendor seam (HeyGen/Veo3/Runway) whose API call
- * is pending. `isConfigured` reflects whether its credentials are present.
+ * from a scaffolded vendor seam. Async backends (e.g. HeyGen) return a `pending`
+ * result with a `jobId` and implement `poll` to fetch the asset when ready.
  */
 export interface RenderBackend {
   key: string;
@@ -24,6 +27,7 @@ export interface RenderBackend {
   note: string;
   isConfigured(config: EngineConfig): boolean;
   render(input: RenderInput, config: EngineConfig): Promise<RenderResult>;
+  poll?(jobId: string, config: EngineConfig): Promise<RenderResult>;
 }
 
 export interface RenderBackendInfo {
