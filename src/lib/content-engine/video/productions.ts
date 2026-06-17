@@ -1,30 +1,32 @@
 /**
  * Faceless-video production orchestration. Same shape as the agent loop:
  * source (approved script) -> Producer package -> human approval -> render ->
- * distribute. Nothing is acted on without the operator's approval.
+ * distribute. Depends only on the EngineContext (ports) — no host imports.
  */
 
-import "server-only";
-import { insert, list, newId, nowIso, update } from "@/lib/db";
+import type { EngineContext } from "@/lib/content-engine/ports";
 import type { AgentJob, VideoProduction } from "@/lib/types";
 import { produceVideoPackage } from "./producer";
-import { renderVideo } from "./render";
+import { resolveRenderBackend } from "./render/registry";
 
 function scriptOf(job: AgentJob): string {
   return job.edited_output ?? job.output;
 }
 
-export async function createProduction(jobId: string): Promise<VideoProduction> {
-  const job = (await list("agent_job")).find((j) => j.id === jobId);
+export async function createProduction(
+  ctx: EngineContext,
+  jobId: string,
+): Promise<VideoProduction> {
+  const job = (await ctx.store.list("agent_job")).find((j) => j.id === jobId);
   if (!job) throw new Error("Source job not found.");
   if (job.status !== "approved") {
     throw new Error("Produce videos from an approved piece.");
   }
-  const ts = nowIso();
+  const ts = ctx.store.now();
   const prod: VideoProduction = {
-    id: newId(),
+    id: ctx.store.newId(),
     job_id: job.id,
-    venture_id: job.venture_id,
+    venture_id: job.venture_id, // opaque project id to the engine
     script: scriptOf(job),
     title: "",
     voiceover_script: "",
@@ -37,67 +39,80 @@ export async function createProduction(jobId: string): Promise<VideoProduction> 
     created_at: ts,
     updated_at: ts,
   };
-  return insert("video_production", prod);
+  return ctx.store.insert("video_production", prod);
 }
 
-async function getProduction(id: string): Promise<VideoProduction> {
-  const p = (await list("video_production")).find((x) => x.id === id);
+async function getProduction(
+  ctx: EngineContext,
+  id: string,
+): Promise<VideoProduction> {
+  const p = (await ctx.store.list("video_production")).find((x) => x.id === id);
   if (!p) throw new Error("Production not found.");
   return p;
 }
 
-/** Run the Producer agent to fill the production package. */
-export async function generatePackage(id: string): Promise<VideoProduction> {
-  const prod = await getProduction(id);
+export async function generatePackage(
+  ctx: EngineContext,
+  id: string,
+): Promise<VideoProduction> {
+  const prod = await getProduction(ctx, id);
   try {
-    const pkg = await produceVideoPackage(prod.script);
-    return update("video_production", id, {
+    const pkg = await produceVideoPackage(ctx.llm, prod.script);
+    return ctx.store.update("video_production", id, {
       title: pkg.title,
       voiceover_script: pkg.voiceover_script,
       scene_plan: JSON.stringify(pkg.scenes),
       thumbnail_concept: pkg.thumbnail_concept,
       status: "awaiting_approval",
       error: null,
-      updated_at: nowIso(),
+      updated_at: ctx.store.now(),
     });
   } catch (err) {
-    return update("video_production", id, {
+    return ctx.store.update("video_production", id, {
       status: "failed",
       error: err instanceof Error ? err.message : "Unknown error",
-      updated_at: nowIso(),
+      updated_at: ctx.store.now(),
     });
   }
 }
 
-/** Render the video asset via the delegated backend (stub in v1). */
-export async function renderProduction(id: string): Promise<VideoProduction> {
-  const prod = await getProduction(id);
+export async function renderProduction(
+  ctx: EngineContext,
+  id: string,
+  preferredBackend?: string,
+): Promise<VideoProduction> {
+  const prod = await getProduction(ctx, id);
   try {
-    const { videoUrl, backend } = await renderVideo({
-      title: prod.title,
-      voiceover_script: prod.voiceover_script,
-      scenes: JSON.parse(prod.scene_plan || "[]"),
-      thumbnail_concept: prod.thumbnail_concept,
-    });
-    return update("video_production", id, {
+    const backend = resolveRenderBackend(ctx.config, preferredBackend);
+    const { videoUrl, backend: used } = await backend.render(
+      {
+        title: prod.title,
+        voiceoverScript: prod.voiceover_script,
+        scenes: JSON.parse(prod.scene_plan || "[]"),
+        thumbnailConcept: prod.thumbnail_concept,
+      },
+      ctx.config,
+    );
+    return ctx.store.update("video_production", id, {
       video_url: videoUrl,
-      backend,
+      backend: used,
       error: null,
-      updated_at: nowIso(),
+      updated_at: ctx.store.now(),
     });
   } catch (err) {
-    return update("video_production", id, {
+    return ctx.store.update("video_production", id, {
       error: err instanceof Error ? err.message : "Render failed",
-      updated_at: nowIso(),
+      updated_at: ctx.store.now(),
     });
   }
 }
 
 export async function updateProduction(
+  ctx: EngineContext,
   id: string,
   patch: Partial<VideoProduction>,
 ): Promise<VideoProduction> {
-  const allowed: Partial<VideoProduction> = { updated_at: nowIso() };
+  const allowed: Partial<VideoProduction> = { updated_at: ctx.store.now() };
   for (const k of [
     "title",
     "voiceover_script",
@@ -107,5 +122,5 @@ export async function updateProduction(
   ] as (keyof VideoProduction)[]) {
     if (k in patch) (allowed as Record<string, unknown>)[k] = patch[k];
   }
-  return update("video_production", id, allowed);
+  return ctx.store.update("video_production", id, allowed);
 }

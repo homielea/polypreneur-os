@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { badRequest, handler } from "@/lib/api";
 import { remove } from "@/lib/db";
+import { createEngineContext } from "@/lib/engine";
 import {
   generatePackage,
   renderProduction,
@@ -22,28 +23,30 @@ export async function PATCH(
 ) {
   const body = (await req.json().catch(() => ({}))) as {
     action?: "generate" | "render" | "approve" | "reject" | "reset";
+    backend?: string;
     title?: string;
     voiceover_script?: string;
     thumbnail_concept?: string;
   };
+  const ctx = createEngineContext();
 
   switch (body.action) {
     case "generate":
-      return handler(() => generatePackage(params.id));
+      return handler(() => generatePackage(ctx, params.id));
     case "render":
-      return handler(() => renderProduction(params.id));
+      return handler(() => renderProduction(ctx, params.id, body.backend));
     case "approve":
       return handler(() =>
-        updateProduction(params.id, { ...editFields(body), status: "approved" }),
+        updateProduction(ctx, params.id, { ...editFields(body), status: "approved" }),
       );
     case "reject":
-      return handler(() => updateProduction(params.id, { status: "rejected" }));
+      return handler(() => updateProduction(ctx, params.id, { status: "rejected" }));
     case "reset":
-      return handler(() => updateProduction(params.id, { status: "draft" }));
+      return handler(() => updateProduction(ctx, params.id, { status: "draft" }));
     case undefined: {
       const edits = editFields(body);
       if (Object.keys(edits).length === 0) return badRequest("Nothing to update.");
-      return handler(() => updateProduction(params.id, edits));
+      return handler(() => updateProduction(ctx, params.id, edits));
     }
     default:
       return badRequest("Unknown action.");

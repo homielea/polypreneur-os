@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { badRequest, handler } from "@/lib/api";
 import { list } from "@/lib/db";
+import { createEngineContext } from "@/lib/engine";
 import { createProduction } from "@/lib/content-engine/video/productions";
 
 export const dynamic = "force-dynamic";
@@ -16,5 +17,5 @@ export function GET() {
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as { jobId?: string };
   if (!body.jobId) return badRequest("jobId is required.");
-  return handler(() => createProduction(body.jobId as string));
+  return handler(() => createProduction(createEngineContext(), body.jobId as string));
 }

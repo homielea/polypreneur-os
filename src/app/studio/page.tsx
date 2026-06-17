@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { getJSON, sendJSON } from "@/lib/client";
 import { FORMAT_LABEL } from "@/lib/agents/repurposer/prompt";
+import type { RenderBackendInfo } from "@/lib/content-engine/video/render/types";
 import type { AgentJob, VideoProduction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +46,11 @@ export default function StudioPage() {
     queryKey: ["agent-jobs"],
     queryFn: () => getJSON<AgentJob[]>("/api/agent-jobs"),
   });
+  const backends = useQuery({
+    queryKey: ["render-backends"],
+    queryFn: () =>
+      getJSON<{ backends: RenderBackendInfo[] }>("/api/render/backends"),
+  });
 
   const [jobId, setJobId] = useState("");
   const invalidate = () => qc.invalidateQueries({ queryKey: ["productions"] });
@@ -64,14 +70,28 @@ export default function StudioPage() {
 
   return (
     <div className="space-y-6">
-      <header>
+      <header className="space-y-2">
         <h1 className="text-2xl font-bold">Studio — faceless video</h1>
         <p className="text-muted-foreground">
           The Producer turns an approved piece into a video package — voiceover
           script, scene/b-roll plan, title, thumbnail concept. You approve before
-          anything is rendered or distributed. Rendering is delegated (stub in v1;
-          Blotato/vidIQ later); approved videos publish via the Blotato media path.
+          anything is rendered or distributed. Rendering is a pluggable backend
+          (stub in v1; HeyGen/Veo3/Runway slot in later); approved videos publish
+          via the Blotato media path.
         </p>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-foreground">Render backends:</span>
+          {(backends.data?.backends ?? []).map((b) => (
+            <Badge
+              key={b.key}
+              variant={b.wired && b.configured ? "default" : "outline"}
+              title={b.note}
+            >
+              {b.label}
+              {b.wired ? "" : b.configured ? " · key set, wiring pending" : " · planned"}
+            </Badge>
+          ))}
+        </div>
       </header>
 
       <Card>

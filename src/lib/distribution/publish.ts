@@ -11,6 +11,7 @@ import "server-only";
 import { insert, list, newId, nowIso, update } from "@/lib/db";
 import type { Publication } from "@/lib/types";
 import { resolveDeliveryAdapter } from "@/lib/content-engine/delivery/registry";
+import { engineConfig } from "@/lib/engine";
 
 interface ResolvedContent {
   text: string;
@@ -47,7 +48,7 @@ export async function sendPublication(pub: Publication): Promise<Publication> {
         ) ?? null
       : null;
 
-    const adapter = resolveDeliveryAdapter(pub.channel);
+    const adapter = resolveDeliveryAdapter(engineConfig(), pub.channel);
     const { externalRef } = await adapter.deliver({
       content: text,
       connection,

@@ -14,17 +14,31 @@ transcribe  Scribe /         approval       Repurposer  delivery   Analyst
 (voice→text) Repurposer       inbox                      backend    metrics
 ```
 
-## Seams (provider-swappable, env-gated)
+## Ports (dependency inversion — the extraction boundary)
+
+Engine code imports ONLY `ports.ts` (+ shared types), never the host's
+db / env / SDK clients:
+
+- `StorePort` — persistence (list/insert/update, newId, now)
+- `LlmPort` — `complete()` + `available`
+- `EngineConfig` — backend credentials (Blotato, Beehiiv, HeyGen, Runway, Veo)
+
+The host wires these in `src/lib/engine.ts` (`createEngineContext()`). To extract:
+move this folder and provide a context from the new host — no engine edits.
+"Project" is the generic owning entity; PP-OS binds project = venture, and the
+engine treats the id as opaque (no venture logic anywhere inside).
+
+## Seams (provider-swappable)
 
 | Concern | Interface | Backends |
 |---|---|---|
 | Transcription | `agents/scribe/transcribe.ts` | Google STT (swap: Whisper/Deepgram) |
-| Drafting | the agents (Claude) | Claude (locked voice — stays in PP-OS) |
-| **Delivery** | `content-engine/delivery/types.ts` → `registry.ts` | **Blotato** (live), mark-as-posted (placeholder), Beehiiv; **Postiz** is the intended OSS/self-host backend for the standalone product |
+| Drafting / Producer | `LlmPort` | Claude (locked voice — stays in PP-OS) |
+| **Delivery** | `delivery/registry.ts` `resolveDeliveryAdapter(config, platform)` | **Blotato** (live), mark-as-posted, Beehiiv; **Postiz** for the OSS/self-host product |
+| **Video render** | `video/render/registry.ts` `resolveRenderBackend(config)` | stub (wired); **HeyGen / Veo3 / Runway / Blotato** (scaffolded seams) |
 | Metrics | `analyst/metrics.ts` sources | Beehiiv (stub others) |
 
-Swapping the delivery backend = edit `delivery/registry.ts` + add one adapter.
-That is the whole point: Blotato now, self-hosted Postiz later, same interface.
+Adding a render or delivery backend = one adapter + a line in its registry.
 
 ## Extraction roadmap
 

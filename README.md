@@ -80,8 +80,14 @@ npm run scribe:scan  # scan the Drive folder + content-flagged check-ins -> jobs
   project-scoped. See `src/lib/content-engine/README.md` for the extraction plan.
 - **Faceless video (Studio)** — the Producer agent turns an approved piece into a
   video package (title, voiceover script, scene/b-roll plan, thumbnail concept);
-  you approve before render/distribute; rendering is a delegated backend (stub
-  in v1, Blotato/vidIQ later); approved videos publish via the Blotato media path.
+  you approve before render/distribute; rendering is a **pluggable backend
+  registry** (stub wired; HeyGen / Veo3 / Runway / Blotato scaffolded — add a
+  vendor with one adapter); approved videos publish via the Blotato media path.
+- **Extractable content engine** — `src/lib/content-engine` now depends only on
+  ports (`StorePort` / `LlmPort` / `EngineConfig`); the host wires them in
+  `src/lib/engine.ts`. The engine has no venture/db/env/SDK imports, so it can be
+  lifted into its own package. "Project" is generic (PP-OS binds project=venture).
+  See `src/lib/content-engine/README.md`.
 - **The Analyst** — transparent, rule-based signals: per-venture momentum (7d vs
   prior 7d), a neglect radar ("going cold" before a venture dies, also surfaced
   on Today), and content-performance metrics (Beehiiv ingest; seeded otherwise).
