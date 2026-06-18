@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Sparkles,
   Trash2,
+  Workflow,
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -92,7 +93,10 @@ export default function InboxPage() {
     queryFn: () => getJSON<AgentJob[]>("/api/agent-jobs"),
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["agent-jobs"] });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["agent-jobs"] });
+    qc.invalidateQueries({ queryKey: ["productions"] });
+  };
 
   const scan = useMutation({
     mutationFn: () => sendJSON<{ created: number }>("/api/drive/scan", "POST"),
@@ -107,6 +111,22 @@ export default function InboxPage() {
     mutationFn: () => sendJSON<{ ran: number }>("/api/agents/run", "POST"),
     onSuccess: (r) => {
       toast.success(`Agents ran on ${r.ran} job(s)`);
+      invalidate();
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const advance = useMutation({
+    mutationFn: () =>
+      sendJSON<{ repurposeQueued: number; videosQueued: number; funnel: { awaitingApproval: number } }>(
+        "/api/workflow/run",
+        "POST",
+        { advanceRepurpose: true, advanceVideo: true, draft: true },
+      ),
+    onSuccess: (r) => {
+      toast.success(
+        `Advanced approved → ${r.repurposeQueued} repurpose + ${r.videosQueued} video package(s). ${r.funnel.awaitingApproval} awaiting approval.`,
+      );
       invalidate();
     },
     onError: (e) => toast.error((e as Error).message),
@@ -143,6 +163,15 @@ export default function InboxPage() {
           >
             <Sparkles className="mr-2 h-4 w-4" />
             Run agents ({pending.length} pending)
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => advance.mutate()}
+            disabled={advance.isPending || approved.length === 0}
+            title="Fan approved pieces into repurposed posts + faceless-video packages (each lands awaiting approval)"
+          >
+            <Workflow className="mr-2 h-4 w-4" />
+            Advance approved
           </Button>
         </div>
       </header>

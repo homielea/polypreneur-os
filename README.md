@@ -90,6 +90,12 @@ npm run scribe:scan  # scan the Drive folder + content-flagged check-ins -> jobs
   `src/lib/engine.ts`. The engine has no venture/db/env/SDK imports, so it can be
   lifted into its own package. "Project" is generic (PP-OS binds project=venture).
   See `src/lib/content-engine/README.md`.
+- **Gated workflow + Claude skill** — `src/lib/workflow.ts` + `/api/workflow/*`
+  run the mechanical 80% (scan → draft → repurpose → produce a video package) up
+  to each approval gate, never through it. A Claude skill
+  (`.claude/skills/content-engine`) wraps it so an agent can drive the pipeline
+  and report what's awaiting approval — the v2 agent hand-off seam. Approval and
+  publishing stay human.
 - **The Analyst** — transparent, rule-based signals: per-venture momentum (7d vs
   prior 7d), a neglect radar ("going cold" before a venture dies, also surfaced
   on Today), and content-performance metrics (Beehiiv ingest; seeded otherwise).
