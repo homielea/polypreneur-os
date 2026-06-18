@@ -12,6 +12,19 @@ dist
 dist-ssr
 *.local
 
+# Next.js
+.next
+out
+next-env.d.ts
+
+# Local JSON data store (used when Supabase is not configured)
+.data
+
+# Env
+.env
+.env.local
+.env*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
