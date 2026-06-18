@@ -1,13 +1,11 @@
 /**
- * Platform registry. Channels are connections to these platforms. Most are
- * PLACEHOLDERS in v1 — the operator surface + per-venture routing without the
- * real OAuth. Real multi-network delivery is a future single adapter (e.g.
- * self-hosted Postiz), not 15 integrations built here.
+ * Platform registry. Channels are connections to these platforms; the operator
+ * surface + per-venture routing. Actual outbound delivery is decided by the
+ * delivery registry (webhook to your own pipeline, Beehiiv draft, or mark-as-
+ * posted) — not by social-media aggregators bundled here.
  *
- * `adapter` says how a send is actually performed:
- *   - beehiiv     : real draft-create via the Beehiiv API
- *   - manual      : "mark as posted" — the operator confirms they posted it
- *   - placeholder : same as manual for now (mark as posted), pending an adapter
+ * `adapter`/`kind` are informational labels for the UI; the delivery registry is
+ * authoritative for how a send happens.
  */
 
 export type PlatformKind = "newsletter" | "social" | "video" | "manual";

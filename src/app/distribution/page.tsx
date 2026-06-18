@@ -92,9 +92,7 @@ export default function DistributionPage() {
   const status = useQuery({
     queryKey: ["distribution-status"],
     queryFn: () =>
-      getJSON<{ blotato: boolean; postiz: boolean; beehiiv: boolean }>(
-        "/api/distribution/status",
-      ),
+      getJSON<{ webhook: boolean; beehiiv: boolean }>("/api/distribution/status"),
   });
   const productions = useQuery({
     queryKey: ["productions"],
@@ -118,23 +116,18 @@ export default function DistributionPage() {
           approve and schedule; agents take over the grunt-work in v2.
         </p>
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-muted-foreground">Delivery backends:</span>
+          <span className="text-muted-foreground">Delivery:</span>
           <Badge
-            className={cn("text-white", status.data?.blotato ? "bg-emerald-600" : "bg-muted-foreground")}
+            className={cn("text-white", status.data?.webhook ? "bg-emerald-600" : "bg-muted-foreground")}
           >
-            Blotato {status.data?.blotato ? "connected" : "off"}
-          </Badge>
-          <Badge
-            className={cn("text-white", status.data?.postiz ? "bg-emerald-600" : "bg-muted-foreground")}
-          >
-            Postiz {status.data?.postiz ? "connected" : "off"}
+            Your pipeline (webhook) {status.data?.webhook ? "connected" : "off"}
           </Badge>
           <Badge variant="outline">
             Beehiiv {status.data?.beehiiv ? "connected" : "draft (needs creds)"}
           </Badge>
-          {!status.data?.blotato && !status.data?.postiz && (
+          {!status.data?.webhook && (
             <span className="text-muted-foreground">
-              · social/video channels are mark-as-posted until an aggregator is connected
+              · social/video channels are mark-as-posted until your webhook is set
             </span>
           )}
         </div>
@@ -266,8 +259,7 @@ function ChannelGrid({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="auto">Auto</SelectItem>
-                        <SelectItem value="blotato">Blotato</SelectItem>
-                        <SelectItem value="postiz">Postiz</SelectItem>
+                        <SelectItem value="webhook">Your pipeline</SelectItem>
                         <SelectItem value="mark_posted">Mark posted</SelectItem>
                       </SelectContent>
                     </Select>

@@ -69,21 +69,19 @@ npm run scribe:scan  # scan the Drive folder + content-flagged check-ins -> jobs
 - **The Repurposer** — the second agent, proving the rails generalize: one
   approved piece → derivative formats, each approval-gated. Operator-triggered in
   v1 (the human is the router); v2 can auto-chain.
-- **Marketing distribution** — per-venture channel connections (Beehiiv,
-  Substack, X, LinkedIn, Instagram, …), a multi-channel composer, and a
-  scheduled outbox. Delivery is a swappable backend behind one interface
-  (`src/lib/content-engine/delivery`), chosen **per channel** (`auto` / Blotato /
-  Postiz / mark-posted): **Blotato** (hosted) and **self-hosted Postiz** (OSS, e.g.
-  on Railway) are both wired multi-network adapters; Beehiiv does real newsletter
-  drafts; absent creds degrade to "mark as posted". Content is linked to a
-  venture, so distribution and the Analyst are project-scoped.
+- **Marketing distribution** — per-venture channel connections, a multi-channel
+  composer, and a scheduled outbox. Distribution deliberately bundles **no
+  social-media aggregators**: outbound hands off to **your own pipeline** via a
+  webhook (`CONTENT_WEBHOOK_URL`) — chosen per channel (`auto` / webhook /
+  mark-posted) — while Beehiiv does real newsletter drafts. Absent a webhook,
+  channels are "mark as posted". Content is linked to a venture, so distribution
+  and the Analyst are project-scoped.
 - **Faceless video (Studio)** — the Producer agent turns an approved piece into a
   video package (title, voiceover script, scene/b-roll plan, thumbnail concept);
-  you approve before render/distribute; rendering is a **pluggable backend
-  registry** — **HeyGen (avatar/UGC) is wired** (async submit→poll; needs
-  `HEYGEN_API_KEY` + `HEYGEN_AVATAR_ID` + `HEYGEN_VOICE_ID`), with Veo3 / Runway /
-  Blotato scaffolded and a stub fallback; approved videos publish via the Blotato
-  media path.
+  you approve before render/distribute; rendering uses **HeyGen** (avatar/UGC,
+  async submit→poll; needs `HEYGEN_API_KEY` + `HEYGEN_AVATAR_ID` +
+  `HEYGEN_VOICE_ID`) when configured, else a stub; approved videos hand off to
+  your pipeline via the distribution webhook.
 - **Extractable content engine** — `src/lib/content-engine` now depends only on
   ports (`StorePort` / `LlmPort` / `EngineConfig`); the host wires them in
   `src/lib/engine.ts`. The engine has no venture/db/env/SDK imports, so it can be

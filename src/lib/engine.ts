@@ -44,11 +44,9 @@ const llm: LlmPort = {
 
 export function engineConfig(): EngineConfig {
   return {
-    blotatoApiKey: env.blotatoApiKey || undefined,
-    postiz:
-      env.postizApiUrl && env.postizApiKey
-        ? { apiUrl: env.postizApiUrl, apiKey: env.postizApiKey }
-        : undefined,
+    webhook: env.webhookUrl
+      ? { url: env.webhookUrl, secret: env.webhookSecret || undefined }
+      : undefined,
     beehiiv:
       env.beehiivApiKey && env.beehiivPublicationId
         ? { apiKey: env.beehiivApiKey, publicationId: env.beehiivPublicationId }
@@ -60,8 +58,6 @@ export function engineConfig(): EngineConfig {
           voiceId: env.heygenVoiceId || undefined,
         }
       : undefined,
-    runwayApiKey: env.runwayApiKey || undefined,
-    veoApiKey: env.veoApiKey || undefined,
   };
 }
 

@@ -26,17 +26,13 @@ export const env = {
   // Beehiiv newsletter publishing (write integration).
   beehiivApiKey: process.env.BEEHIIV_API_KEY ?? "",
   beehiivPublicationId: process.env.BEEHIIV_PUBLICATION_ID ?? "",
-  // Blotato — multi-platform delivery aggregator (the social/video send backend).
-  blotatoApiKey: process.env.BLOTATO_API_KEY ?? "",
-  // Self-hosted Postiz (Railway etc.). apiUrl = the backend base (NEXT_PUBLIC_BACKEND_URL).
-  postizApiUrl: process.env.POSTIZ_API_URL ?? "",
-  postizApiKey: process.env.POSTIZ_API_KEY ?? "",
-  // Faceless-video render backends (pluggable; add vendors freely).
+  // Outbound delivery -> your own pipeline (n8n/Make/script). Optional secret.
+  webhookUrl: process.env.CONTENT_WEBHOOK_URL ?? "",
+  webhookSecret: process.env.CONTENT_WEBHOOK_SECRET ?? "",
+  // Faceless-video render: HeyGen (wired) + stub fallback.
   heygenApiKey: process.env.HEYGEN_API_KEY ?? "",
   heygenAvatarId: process.env.HEYGEN_AVATAR_ID ?? "",
   heygenVoiceId: process.env.HEYGEN_VOICE_ID ?? "",
-  runwayApiKey: process.env.RUNWAY_API_KEY ?? "",
-  veoApiKey: process.env.VEO_API_KEY ?? "",
 } as const;
 
 export const hasSupabase = Boolean(env.supabaseUrl && env.supabaseKey);
@@ -49,10 +45,7 @@ export const hasDrive = hasGoogle && Boolean(env.driveFolderId);
 // + the cloud-platform scope granted to the service account).
 export const hasTranscription = hasGoogle;
 export const hasBeehiiv = Boolean(env.beehiivApiKey && env.beehiivPublicationId);
-// Blotato delivery backend. When set, social/video channels deliver for real;
-// otherwise they fall back to "mark as posted" placeholders.
-export const hasBlotato = Boolean(env.blotatoApiKey);
-export const hasPostiz = Boolean(env.postizApiUrl && env.postizApiKey);
+// Outbound delivery webhook -> your own pipeline. When set, social/video channels
+// hand off to it; otherwise they fall back to "mark as posted".
+export const hasWebhook = Boolean(env.webhookUrl);
 export const hasHeygen = Boolean(env.heygenApiKey);
-export const hasRunway = Boolean(env.runwayApiKey);
-export const hasVeo = Boolean(env.veoApiKey);

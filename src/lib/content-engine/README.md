@@ -34,8 +34,8 @@ engine treats the id as opaque (no venture logic anywhere inside).
 |---|---|---|
 | Transcription | `agents/scribe/transcribe.ts` | Google STT (swap: Whisper/Deepgram) |
 | Drafting / Producer | `LlmPort` | Claude (locked voice — stays in PP-OS) |
-| **Delivery** | `delivery/registry.ts` `resolveDeliveryAdapter(config, platform, backend)` | **Blotato** + **self-hosted Postiz** (both wired), Beehiiv, mark-as-posted. Backend is per-channel (`auto`/`blotato`/`postiz`/`mark_posted`) |
-| **Video render** | `video/render/registry.ts` `resolveRenderBackend(config)` | **HeyGen** (wired, async submit→poll), stub (wired); Veo3 / Runway / Blotato (scaffolded) |
+| **Delivery** | `delivery/registry.ts` `resolveDeliveryAdapter(config, platform, backend)` | **webhook → your own pipeline**, Beehiiv (newsletter draft), mark-as-posted. Per-channel backend (`auto`/`webhook`/`mark_posted`). No social aggregators bundled here. |
+| **Video render** | `video/render/registry.ts` `resolveRenderBackend(config)` | **HeyGen** (wired, async submit→poll) + stub |
 | Metrics | `analyst/metrics.ts` sources | Beehiiv (stub others) |
 
 Adding a render or delivery backend = one adapter + a line in its registry.

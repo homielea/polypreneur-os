@@ -38,14 +38,12 @@ export interface LlmPort {
 
 /** Backend credentials/config. All optional; absent = that backend is off. */
 export interface EngineConfig {
-  blotatoApiKey?: string;
-  // Self-hosted Postiz delivery aggregator. apiUrl = NEXT_PUBLIC_BACKEND_URL.
-  postiz?: { apiUrl: string; apiKey: string };
+  // Outbound delivery is handed to your own pipeline via a webhook (or done
+  // manually). No social-media aggregators are bundled in the engine.
+  webhook?: { url: string; secret?: string };
   beehiiv?: { apiKey: string; publicationId: string };
-  // Faceless-video render backends (Phase 2/3; add vendors freely).
+  // Faceless-video render backends (HeyGen wired; stub fallback).
   heygen?: { apiKey: string; avatarId?: string; voiceId?: string; width?: number; height?: number };
-  runwayApiKey?: string;
-  veoApiKey?: string;
 }
 
 export interface EngineContext {

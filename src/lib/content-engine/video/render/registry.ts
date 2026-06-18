@@ -9,18 +9,11 @@
 
 import type { EngineConfig } from "@/lib/content-engine/ports";
 import { heygenRender } from "./heygen";
-import { runwayRender } from "./runway";
 import { stubRender } from "./stub";
-import { veoRender } from "./veo";
 import type { RenderBackend, RenderBackendInfo } from "./types";
 
-// Vendors first (preferred when wired+configured), stub last (fallback).
-const BACKENDS: RenderBackend[] = [
-  heygenRender,
-  veoRender,
-  runwayRender,
-  stubRender,
-];
+// HeyGen first (preferred when configured), stub last (fallback).
+const BACKENDS: RenderBackend[] = [heygenRender, stubRender];
 
 export function getRenderBackend(key: string): RenderBackend | undefined {
   return BACKENDS.find((b) => b.key === key);

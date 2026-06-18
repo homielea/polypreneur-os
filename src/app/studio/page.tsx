@@ -75,9 +75,9 @@ export default function StudioPage() {
         <p className="text-muted-foreground">
           The Producer turns an approved piece into a video package — voiceover
           script, scene/b-roll plan, title, thumbnail concept. You approve before
-          anything is rendered or distributed. Rendering is a pluggable backend
-          (stub in v1; HeyGen/Veo3/Runway slot in later); approved videos publish
-          via the Blotato media path.
+          anything is rendered or distributed. Rendering uses HeyGen when
+          configured (stub otherwise); approved videos hand off to your pipeline
+          via the distribution webhook.
         </p>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-foreground">Render backends:</span>

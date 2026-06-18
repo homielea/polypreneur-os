@@ -1,8 +1,9 @@
 /**
  * Distribution core. The operator initiates every publication from an APPROVED
  * piece — a text agent_job OR an approved faceless-video production. Sending
- * dispatches through the delivery seam (resolveDeliveryAdapter): Beehiiv draft,
- * Blotato for social/video, or "mark as posted" placeholder.
+ * dispatches through the delivery seam (resolveDeliveryAdapter): a webhook to
+ * your own pipeline (social/video), a Beehiiv draft (newsletter), or "mark as
+ * posted".
  *
  * Scheduled publications are processed on-demand (runDuePublications).
  */
