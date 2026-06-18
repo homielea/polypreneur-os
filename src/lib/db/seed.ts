@@ -104,12 +104,12 @@ export function buildSeed(): Store {
     publication: [],
 
     channel_connection: [
-      { id: "cc-manual", venture_id: null, platform: "manual", display_name: "Manual export", handle: "", status: "connected", created_at: iso(-30) },
-      { id: "cc-bh", venture_id: vNewsletter, platform: "beehiiv", display_name: "Lea's Lessons", handle: "leaslessons", status: "placeholder", created_at: iso(-30) },
-      { id: "cc-ss", venture_id: vNewsletter, platform: "substack", display_name: "Lea on Substack", handle: "@lea", status: "placeholder", created_at: iso(-30) },
-      { id: "cc-x", venture_id: vCasaLea, platform: "x", display_name: "Casa Lea on X", handle: "@casalea", status: "placeholder", created_at: iso(-30) },
-      { id: "cc-ig", venture_id: vCasaLea, platform: "instagram", display_name: "Casa Lea IG", handle: "@casa.lea", status: "placeholder", created_at: iso(-30) },
-      { id: "cc-li", venture_id: null, platform: "linkedin", display_name: "Lea on LinkedIn", handle: "lea", status: "placeholder", created_at: iso(-30) },
+      { id: "cc-manual", venture_id: null, platform: "manual", display_name: "Manual export", handle: "", delivery_backend: "mark_posted", status: "connected", created_at: iso(-30) },
+      { id: "cc-bh", venture_id: vNewsletter, platform: "beehiiv", display_name: "Lea's Lessons", handle: "leaslessons", delivery_backend: "auto", status: "placeholder", created_at: iso(-30) },
+      { id: "cc-ss", venture_id: vNewsletter, platform: "substack", display_name: "Lea on Substack", handle: "@lea", delivery_backend: "auto", status: "placeholder", created_at: iso(-30) },
+      { id: "cc-x", venture_id: vCasaLea, platform: "x", display_name: "Casa Lea on X", handle: "@casalea", delivery_backend: "postiz", status: "placeholder", created_at: iso(-30) },
+      { id: "cc-ig", venture_id: vCasaLea, platform: "instagram", display_name: "Casa Lea IG", handle: "@casa.lea", delivery_backend: "auto", status: "placeholder", created_at: iso(-30) },
+      { id: "cc-li", venture_id: null, platform: "linkedin", display_name: "Lea on LinkedIn", handle: "lea", delivery_backend: "auto", status: "placeholder", created_at: iso(-30) },
     ],
 
     video_production: [],

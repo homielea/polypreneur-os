@@ -36,6 +36,6 @@ export type {
 // Delivery
 export {
   resolveDeliveryAdapter,
-  platformDeliversLive,
+  configuredBackends,
 } from "./delivery/registry";
 export type { DeliveryAdapter, DeliveryInput, DeliveryResult } from "./delivery/types";

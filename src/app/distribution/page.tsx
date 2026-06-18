@@ -91,7 +91,10 @@ export default function DistributionPage() {
   });
   const status = useQuery({
     queryKey: ["distribution-status"],
-    queryFn: () => getJSON<{ blotato: boolean; beehiiv: boolean }>("/api/distribution/status"),
+    queryFn: () =>
+      getJSON<{ blotato: boolean; postiz: boolean; beehiiv: boolean }>(
+        "/api/distribution/status",
+      ),
   });
   const productions = useQuery({
     queryKey: ["productions"],
@@ -115,20 +118,25 @@ export default function DistributionPage() {
           approve and schedule; agents take over the grunt-work in v2.
         </p>
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-muted-foreground">Delivery backend:</span>
+          <span className="text-muted-foreground">Delivery backends:</span>
           <Badge
-            className={cn(
-              "text-white",
-              status.data?.blotato ? "bg-emerald-600" : "bg-amber-500",
-            )}
+            className={cn("text-white", status.data?.blotato ? "bg-emerald-600" : "bg-muted-foreground")}
           >
-            {status.data?.blotato
-              ? "Blotato connected — social/video deliver live"
-              : "Blotato not connected — social/video are mark-as-posted"}
+            Blotato {status.data?.blotato ? "connected" : "off"}
+          </Badge>
+          <Badge
+            className={cn("text-white", status.data?.postiz ? "bg-emerald-600" : "bg-muted-foreground")}
+          >
+            Postiz {status.data?.postiz ? "connected" : "off"}
           </Badge>
           <Badge variant="outline">
             Beehiiv {status.data?.beehiiv ? "connected" : "draft (needs creds)"}
           </Badge>
+          {!status.data?.blotato && !status.data?.postiz && (
+            <span className="text-muted-foreground">
+              · social/video channels are mark-as-posted until an aggregator is connected
+            </span>
+          )}
         </div>
       </header>
 
@@ -212,6 +220,14 @@ function ChannelGrid({
       refresh();
     },
   });
+  const setBackend = useMutation({
+    mutationFn: (v: { id: string; backend: string }) =>
+      sendJSON(`/api/connections/${v.id}`, "PATCH", { delivery_backend: v.backend }),
+    onSuccess: () => {
+      onChanged();
+      refresh();
+    },
+  });
 
   return (
     <section className="space-y-3">
@@ -237,6 +253,25 @@ function ChannelGrid({
                 </div>
                 {def.note && (
                   <p className="text-[11px] text-muted-foreground">{def.note}</p>
+                )}
+                {def.kind !== "manual" && c.platform !== "beehiiv" && c.platform !== "substack" && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-muted-foreground">via</span>
+                    <Select
+                      value={c.delivery_backend}
+                      onValueChange={(v) => setBackend.mutate({ id: c.id, backend: v })}
+                    >
+                      <SelectTrigger className="h-7 w-32 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">Auto</SelectItem>
+                        <SelectItem value="blotato">Blotato</SelectItem>
+                        <SelectItem value="postiz">Postiz</SelectItem>
+                        <SelectItem value="mark_posted">Mark posted</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
                 <div className="flex gap-1">
                   <Button

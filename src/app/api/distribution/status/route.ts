@@ -1,5 +1,5 @@
 import { handler } from "@/lib/api";
-import { hasBlotato, hasBeehiiv } from "@/lib/env";
+import { hasBlotato, hasBeehiiv, hasPostiz } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 export function GET() {
   return handler(async () => ({
     blotato: hasBlotato,
+    postiz: hasPostiz,
     beehiiv: hasBeehiiv,
   }));
 }

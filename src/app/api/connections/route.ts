@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     platform: body.platform,
     display_name: body.display_name?.trim() || def.label,
     handle: body.handle?.trim() ?? "",
+    delivery_backend: body.delivery_backend ?? "auto",
     // Real OAuth isn't wired in v1 — connections start as placeholders.
     status: (body.status as ConnectionStatus) ?? "placeholder",
     created_at: nowIso(),

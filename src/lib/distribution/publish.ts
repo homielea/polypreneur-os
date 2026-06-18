@@ -48,7 +48,11 @@ export async function sendPublication(pub: Publication): Promise<Publication> {
         ) ?? null
       : null;
 
-    const adapter = resolveDeliveryAdapter(engineConfig(), pub.channel);
+    const adapter = resolveDeliveryAdapter(
+      engineConfig(),
+      pub.channel,
+      connection?.delivery_backend ?? "auto",
+    );
     const { externalRef } = await adapter.deliver({
       content: text,
       connection,

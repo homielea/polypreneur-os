@@ -132,6 +132,7 @@ export interface ChannelConnection {
   platform: string; // beehiiv / substack / x / linkedin / youtube / ...
   display_name: string;
   handle: string;
+  delivery_backend: string; // auto | blotato | postiz | mark_posted
   status: ConnectionStatus;
   created_at: string;
 }

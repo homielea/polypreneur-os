@@ -28,6 +28,9 @@ export const env = {
   beehiivPublicationId: process.env.BEEHIIV_PUBLICATION_ID ?? "",
   // Blotato — multi-platform delivery aggregator (the social/video send backend).
   blotatoApiKey: process.env.BLOTATO_API_KEY ?? "",
+  // Self-hosted Postiz (Railway etc.). apiUrl = the backend base (NEXT_PUBLIC_BACKEND_URL).
+  postizApiUrl: process.env.POSTIZ_API_URL ?? "",
+  postizApiKey: process.env.POSTIZ_API_KEY ?? "",
   // Faceless-video render backends (pluggable; add vendors freely).
   heygenApiKey: process.env.HEYGEN_API_KEY ?? "",
   heygenAvatarId: process.env.HEYGEN_AVATAR_ID ?? "",
@@ -49,6 +52,7 @@ export const hasBeehiiv = Boolean(env.beehiivApiKey && env.beehiivPublicationId)
 // Blotato delivery backend. When set, social/video channels deliver for real;
 // otherwise they fall back to "mark as posted" placeholders.
 export const hasBlotato = Boolean(env.blotatoApiKey);
+export const hasPostiz = Boolean(env.postizApiUrl && env.postizApiKey);
 export const hasHeygen = Boolean(env.heygenApiKey);
 export const hasRunway = Boolean(env.runwayApiKey);
 export const hasVeo = Boolean(env.veoApiKey);

@@ -72,12 +72,11 @@ npm run scribe:scan  # scan the Drive folder + content-flagged check-ins -> jobs
 - **Marketing distribution** — per-venture channel connections (Beehiiv,
   Substack, X, LinkedIn, Instagram, …), a multi-channel composer, and a
   scheduled outbox. Delivery is a swappable backend behind one interface
-  (`src/lib/content-engine/delivery`): **Blotato** is the wired multi-network
-  send adapter (env-gated; social/video deliver live when `BLOTATO_API_KEY` is
-  set, "mark as posted" otherwise), Beehiiv does real newsletter drafts, and
-  self-hosted **Postiz** is the intended OSS backend for the extracted product.
-  Content is linked to a venture, so distribution and the Analyst are
-  project-scoped. See `src/lib/content-engine/README.md` for the extraction plan.
+  (`src/lib/content-engine/delivery`), chosen **per channel** (`auto` / Blotato /
+  Postiz / mark-posted): **Blotato** (hosted) and **self-hosted Postiz** (OSS, e.g.
+  on Railway) are both wired multi-network adapters; Beehiiv does real newsletter
+  drafts; absent creds degrade to "mark as posted". Content is linked to a
+  venture, so distribution and the Analyst are project-scoped.
 - **Faceless video (Studio)** — the Producer agent turns an approved piece into a
   video package (title, voiceover script, scene/b-roll plan, thumbnail concept);
   you approve before render/distribute; rendering is a **pluggable backend
