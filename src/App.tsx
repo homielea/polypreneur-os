@@ -1,20 +1,22 @@
-
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import ProjectWorkspace from "./pages/ProjectWorkspace";
-import StrategyLibrary from "./pages/StrategyLibrary";
+import { AuthProvider } from "@/contexts/AuthContext";
+import AppLayout from "@/components/layout/AppLayout";
+import Landing from "@/pages/Landing";
+import Login from "@/pages/Login";
+import Today from "@/pages/Today";
+import Ledger from "@/pages/Ledger";
+import Ideas from "@/pages/Ideas";
+import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000,
     },
   },
 });
@@ -23,15 +25,20 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/project/:id" element={<ProjectWorkspace />} />
-            <Route path="/strategy" element={<StrategyLibrary />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/app" element={<AppLayout />}>
+                <Route index element={<Today />} />
+                <Route path="ledger" element={<Ledger />} />
+                <Route path="ideas" element={<Ideas />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
