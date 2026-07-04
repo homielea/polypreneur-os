@@ -119,7 +119,7 @@ export default function Landing() {
       </main>
 
       <footer className="mx-auto max-w-4xl border-t px-6 py-8 text-sm text-muted-foreground">
-        Polypreneur OS · pre-launch · Flow on.
+        Polypreneur OS · pre-launch
       </footer>
     </div>
   );

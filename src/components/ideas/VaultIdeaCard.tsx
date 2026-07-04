@@ -5,14 +5,8 @@ import { useArchiveIdea, usePromoteIdea, useRestIdea } from "@/hooks/useIdeas";
 import type { Idea } from "@/types/domain";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CategoryInput } from "@/components/shared/CategoryInput";
+import { LeverageSelect } from "@/components/shared/LeverageSelect";
 
 export function VaultIdeaCard({ idea, due }: { idea: Idea; due: boolean }) {
   const [promoting, setPromoting] = useState(false);
@@ -70,27 +64,10 @@ export function VaultIdeaCard({ idea, due }: { idea: Idea; due: boolean }) {
         )}
         {due && promoting && (
           <div className="flex flex-wrap gap-2">
-            <Input
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="Category"
-              aria-label="Category"
-              className="h-9 w-32"
-            />
-            <Select value={leverage} onValueChange={setLeverage}>
-              <SelectTrigger className="h-9 w-36" aria-label="Leverage">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["1", "2", "3", "4", "5"].map((v) => (
-                  <SelectItem key={v} value={v}>
-                    leverage {v}/5
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CategoryInput value={category} onChange={setCategory} className="h-9 w-36" />
+            <LeverageSelect value={leverage} onValueChange={setLeverage} className="h-9 w-44" />
             <Button size="sm" disabled={promote.isPending} onClick={handlePromote}>
-              Add to Today
+              {promote.isPending ? "Creating…" : "Add to Today"}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setPromoting(false)}>
               Back

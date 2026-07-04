@@ -7,16 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export function ActionRow({ ranked, rank }: { ranked: RankedAction; rank: number }) {
-  const { action, score, reasons } = ranked;
+  const { action, reasons } = ranked;
   const complete = useCompleteAction();
   const remove = useDeleteAction();
 
   const handleComplete = () => {
     complete.mutate(action, {
-      onSuccess: () =>
-        toast.success(`Done. +${action.leverage} ${action.category}`, {
-          description: action.title,
-        }),
+      onSuccess: (result) => {
+        if (!result.completed) return; // already done elsewhere; list will refresh
+        if (result.pointsRecorded) {
+          toast.success(`Done. +${action.leverage} ${action.category}`, {
+            description: action.title,
+          });
+        } else {
+          toast.warning("Completed, but the points didn't record.", {
+            description: action.title,
+          });
+        }
+      },
       onError: (err) => toast.error(err.message),
     });
   };
@@ -39,7 +47,6 @@ export function ActionRow({ ranked, rank }: { ranked: RankedAction; rank: number
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <Badge variant="secondary">{action.category}</Badge>
-        <span className="text-sm tabular-nums text-muted-foreground">{score}</span>
         <Button
           variant="ghost"
           size="icon"

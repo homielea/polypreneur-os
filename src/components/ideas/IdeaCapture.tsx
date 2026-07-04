@@ -2,8 +2,9 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { usePromoteIdea, useVaultIdea } from "@/hooks/useIdeas";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { CategoryInput } from "@/components/shared/CategoryInput";
+import { LeverageSelect } from "@/components/shared/LeverageSelect";
 import {
   Dialog,
   DialogContent,
@@ -11,13 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 type Step = "triage" | "promote";
 
@@ -26,7 +20,7 @@ type Step = "triage" | "promote";
  * "save" — every idea must pass through "is this top-20% right now?".
  * Vaulting is the friction-free default; acting requires one more beat.
  */
-export function IdeaCapture({ knownCategories }: { knownCategories: string[] }) {
+export function IdeaCapture() {
   const [content, setContent] = useState("");
   const [step, setStep] = useState<Step | null>(null);
   const [category, setCategory] = useState("");
@@ -82,7 +76,7 @@ export function IdeaCapture({ knownCategories }: { knownCategories: string[] }) 
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              if (content.trim()) setStep("triage");
+              e.currentTarget.form?.requestSubmit();
             }
           }}
         />
@@ -120,31 +114,8 @@ export function IdeaCapture({ knownCategories }: { knownCategories: string[] }) 
                 <DialogDescription className="pt-1">“{content.trim()}”</DialogDescription>
               </DialogHeader>
               <div className="mt-2 flex gap-2">
-                <Input
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="Category"
-                  aria-label="Category"
-                  list="known-categories-idea"
-                  className="flex-1"
-                />
-                <datalist id="known-categories-idea">
-                  {knownCategories.map((c) => (
-                    <option key={c} value={c} />
-                  ))}
-                </datalist>
-                <Select value={leverage} onValueChange={setLeverage}>
-                  <SelectTrigger className="w-40" aria-label="Leverage">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["1", "2", "3", "4", "5"].map((v) => (
-                      <SelectItem key={v} value={v}>
-                        leverage {v}/5
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CategoryInput value={category} onChange={setCategory} className="flex-1" />
+                <LeverageSelect value={leverage} onValueChange={setLeverage} className="w-44" />
               </div>
               <Button onClick={handlePromote} disabled={promoteIdea.isPending} className="mt-2">
                 {promoteIdea.isPending ? "Creating…" : "Add to Today"}

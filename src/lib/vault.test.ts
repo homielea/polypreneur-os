@@ -35,9 +35,9 @@ describe("partitionVault", () => {
     expect(result.resting.map((i) => i.id)).toEqual(["resting"]);
   });
 
-  it("treats ideas without a resurface date as resting", () => {
+  it("treats ideas without a resurface date as due — nothing may rest forever", () => {
     const result = partitionVault([makeIdea({ next_resurface_at: null })], now);
-    expect(result.due).toHaveLength(0);
-    expect(result.resting).toHaveLength(1);
+    expect(result.due).toHaveLength(1);
+    expect(result.resting).toHaveLength(0);
   });
 });

@@ -40,6 +40,16 @@ All three spec features plus the landing page are built, tested (13 vitest tests
 - Copy written directly from `.agents/product-marketing-context.md` guardrails: no countdowns, no scarcity, no gamified urgency; duplicate signups get a friendly "already on the list" instead of an error; quiet "Flow on." footer.
 - Verified in headless Chromium against the production build: all sections render, no console errors (screenshot shared in session).
 
+## Post-v1 — Code review pass (8-angle multi-agent review, fixes applied)
+
+- Fixed: double-completion double-counting (status guard on the open→done update); lost-points failure now surfaces an honest "completed, but points didn't record" toast instead of failing the mutation.
+- Fixed: scoring store resolved auth from a stale module-level cache — now resolves the session at insert time (deleted the side-channel listener).
+- Fixed: React Query cache now cleared on sign-out (cross-user cache leak on a shared tab).
+- Fixed: idea promotion compensates (deletes the created action) if the idea write fails — no more orphaned boosted actions on retry.
+- Fixed: weekly totals cache key now includes the week; vault ideas with a missing resurface date now count as due (nothing can rest forever); waitlist form shows a clear message instead of a raw fetch error when Supabase env is missing.
+- UX: removed the raw rank number from action rows (it used a different scale than completion points and read as a bug); ranking reasons remain visible.
+- Cleanup: shared `LeverageSelect` + `CategoryInput` components (three drifted copies unified), `useKnownCategories` hook (Ideas page no longer fetches the full actions table for autocomplete), deleted the unmounted legacy shadcn toast stack, removed `lovable-tagger`, removed dead `providerIds` getter, landing footer close aligned with brand guardrails, committed PLAN.md for the record.
+
 ### Decisions (approved or per default rules)
 
 - Kept the Vite + React + shadcn scaffold instead of the spec's Next.js — approved by Lea (simpler; nothing in v1 needs SSR).

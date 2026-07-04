@@ -73,21 +73,23 @@ export function usePromoteIdea() {
         .single();
       if (actionError) throw new Error(actionError.message);
 
-      if (input.existingIdeaId) {
-        const { error } = await supabase
-          .from("ideas")
-          .update({ status: "promoted", promoted_action_id: action.id })
-          .eq("id", input.existingIdeaId);
-        if (error) throw new Error(error.message);
-      } else {
-        const { error } = await supabase.from("ideas").insert({
-          user_id: user.id,
-          content: input.content,
-          triage: "now",
-          status: "promoted",
-          promoted_action_id: action.id,
-        });
-        if (error) throw new Error(error.message);
+      // Two writes, no transaction: if the idea write fails, delete the action
+      // we just created so a retry can't leave duplicate boosted actions.
+      const ideaWrite = input.existingIdeaId
+        ? await supabase
+            .from("ideas")
+            .update({ status: "promoted", promoted_action_id: action.id })
+            .eq("id", input.existingIdeaId)
+        : await supabase.from("ideas").insert({
+            user_id: user.id,
+            content: input.content,
+            triage: "now",
+            status: "promoted",
+            promoted_action_id: action.id,
+          });
+      if (ideaWrite.error) {
+        await supabase.from("actions").delete().eq("id", action.id);
+        throw new Error(ideaWrite.error.message);
       }
       return action as ActionRecord;
     },

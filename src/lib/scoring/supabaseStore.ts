@@ -2,10 +2,13 @@ import { supabase } from "@/lib/supabase";
 import type { CategoryTotal, DateRange, ScoreEventInput, ScoreStore } from "./types";
 
 /** Supabase-backed ScoreStore. user_id is stamped here; RLS enforces it server-side too. */
-export function createSupabaseScoreStore(getUserId: () => string | null): ScoreStore {
+export function createSupabaseScoreStore(): ScoreStore {
   return {
     async insertEvent(event: ScoreEventInput) {
-      const userId = getUserId();
+      // Resolve identity at insert time from the session, not a cached side-channel —
+      // avoids the reload window where auth listeners haven't fired yet.
+      const { data } = await supabase.auth.getSession();
+      const userId = data.session?.user.id;
       if (!userId) throw new Error("Not signed in");
       const { error } = await supabase.from("score_events").insert({
         user_id: userId,

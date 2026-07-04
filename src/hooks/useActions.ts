@@ -22,6 +22,18 @@ export function useOpenActions() {
   });
 }
 
+/** Distinct categories in use, for autocomplete. Fetches only the category column. */
+export function useKnownCategories() {
+  return useQuery({
+    queryKey: [...actionsKey, "categories"],
+    queryFn: async (): Promise<string[]> => {
+      const { data, error } = await supabase.from("actions").select("category");
+      if (error) throw new Error(error.message);
+      return [...new Set((data ?? []).map((r) => r.category))].sort();
+    },
+  });
+}
+
 export interface NewAction {
   title: string;
   category: string;
@@ -55,25 +67,43 @@ export function useCreateAction() {
   });
 }
 
+export interface CompleteResult {
+  /** false when the action was already completed elsewhere (second tab, double-click). */
+  completed: boolean;
+  /** false when the action completed but the score event failed to persist. */
+  pointsRecorded: boolean;
+}
+
 /** Completing an action also records an additive score event (points = leverage). */
 export function useCompleteAction() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (action: ActionRecord) => {
-      const { error } = await supabase
+    mutationFn: async (action: ActionRecord): Promise<CompleteResult> => {
+      // Guard on status so a double-click or second tab can't complete (and
+      // score) the same action twice — only the open→done transition matches.
+      const { data, error } = await supabase
         .from("actions")
         .update({ status: "done", completed_at: new Date().toISOString() })
-        .eq("id", action.id);
+        .eq("id", action.id)
+        .eq("status", "open")
+        .select("id");
       if (error) throw new Error(error.message);
-      await scoringEngine.recordEvent({
-        source: "completion",
-        category: action.category,
-        points: action.leverage,
-        actionId: action.id,
-      });
-      return action;
+      if (!data || data.length === 0) return { completed: false, pointsRecorded: false };
+      try {
+        await scoringEngine.recordEvent({
+          source: "completion",
+          category: action.category,
+          points: action.leverage,
+          actionId: action.id,
+        });
+      } catch {
+        // The action is done either way; surface the points miss instead of
+        // failing the whole mutation and leaving the UI claiming it's open.
+        return { completed: true, pointsRecorded: false };
+      }
+      return { completed: true, pointsRecorded: true };
     },
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: actionsKey });
       queryClient.invalidateQueries({ queryKey: scoreTotalsKey });
     },

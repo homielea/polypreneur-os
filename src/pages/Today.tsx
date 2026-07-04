@@ -14,11 +14,6 @@ export default function Today() {
     [actions],
   );
 
-  const knownCategories = useMemo(
-    () => [...new Set((actions ?? []).map((a) => a.category))].sort(),
-    [actions],
-  );
-
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <header>
@@ -28,7 +23,7 @@ export default function Today() {
         </p>
       </header>
 
-      <ActionComposer knownCategories={knownCategories} />
+      <ActionComposer />
 
       {error && (
         <p className="text-sm text-destructive">Couldn't load actions: {error.message}</p>

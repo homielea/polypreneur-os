@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { useOpenActions } from "@/hooks/useActions";
 import { useVaultIdeas } from "@/hooks/useIdeas";
 import { partitionVault } from "@/lib/vault";
 import { IdeaCapture } from "@/components/ideas/IdeaCapture";
@@ -7,16 +6,10 @@ import { VaultIdeaCard } from "@/components/ideas/VaultIdeaCard";
 
 export default function Ideas() {
   const { data: ideas, isLoading, error } = useVaultIdeas();
-  const { data: actions } = useOpenActions();
 
   const { due, resting } = useMemo(
     () => partitionVault(ideas ?? [], new Date()),
     [ideas],
-  );
-
-  const knownCategories = useMemo(
-    () => [...new Set((actions ?? []).map((a) => a.category))].sort(),
-    [actions],
   );
 
   return (
@@ -28,7 +21,7 @@ export default function Ideas() {
         </p>
       </header>
 
-      <IdeaCapture knownCategories={knownCategories} />
+      <IdeaCapture />
 
       {error && <p className="text-sm text-destructive">Couldn't load ideas: {error.message}</p>}
       {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}

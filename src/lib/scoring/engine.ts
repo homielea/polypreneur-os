@@ -24,10 +24,6 @@ export class ScoringEngine {
     this.providers.set(provider.id, provider);
   }
 
-  get providerIds(): string[] {
-    return [...this.providers.keys()];
-  }
-
   /**
    * Rank actions by summed provider contributions, highest first.
    * Ties break by created_at ascending (older work surfaces first).

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -25,6 +25,13 @@ export function WaitlistForm({ id }: { id?: string }) {
     }
   };
 
+  if (!isSupabaseConfigured) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        The waitlist isn't wired up in this preview build.
+      </p>
+    );
+  }
   if (state === "done") {
     return <p className="text-sm">You're on the list. One email when it's ready — that's all.</p>;
   }

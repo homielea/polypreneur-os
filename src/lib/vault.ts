@@ -17,12 +17,16 @@ export interface VaultPartition {
   resting: Idea[];
 }
 
-/** Split active vaulted ideas into due-for-another-look vs still resting. */
+/**
+ * Split active vaulted ideas into due-for-another-look vs still resting.
+ * A missing resurface date counts as due — the vault must never hold an idea
+ * that can't resurface.
+ */
 export function partitionVault(ideas: Idea[], now: Date): VaultPartition {
   const due: Idea[] = [];
   const resting: Idea[] = [];
   for (const idea of ideas) {
-    if (idea.next_resurface_at && new Date(idea.next_resurface_at) <= now) {
+    if (!idea.next_resurface_at || new Date(idea.next_resurface_at) <= now) {
       due.push(idea);
     } else {
       resting.push(idea);
