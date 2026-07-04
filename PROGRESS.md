@@ -24,9 +24,17 @@ Build log for Polypreneur OS v1 (spec: `polypreneur-os-fable5-spec.md`). One or 
 - Ledger page: reverse-chronological entry cards with timestamps, tag badges, hover-delete, and tag-filter chips (groundwork for the v2 Reflection → Content Pipe).
 - Tags normalized (trimmed, lowercased, deduped) by `parseTags` — 3 more vitest tests (10 total).
 
+## Feature 4 — 80/20 Enforcer + Idea Vault
+
+- Idea capture on the Ideas page with a forced triage step: there is no plain save — every capture answers "is this in the top 20% of leverage right now?". Vault is the low-friction default; acting requires picking a category + leverage and lands the idea on Today as an `idea_promotion` action (which earns the top20-boost in ranking).
+- Vault resurfacing: vaulted ideas rest for 30 days, then move to a gentle "Worth another look?" queue with three choices — act on it, rest another interval, or let go (archived, never deleted). No due dates, nothing turns red.
+- `partitionVault` / `nextResurfaceDate` helpers in `src/lib/vault.ts` with 3 more tests (13 total).
+
 ### Decisions (approved or per default rules)
 
 - Kept the Vite + React + shadcn scaffold instead of the spec's Next.js — approved by Lea (simpler; nothing in v1 needs SSR).
 - Auth is email/password only — avoids the Google OAuth consent-screen hard stop.
 - Domain types are hand-maintained in `src/types/domain.ts` (no live project for codegen yet).
 - `waitlist_signups` RLS: insert-only for anon/authenticated, no read policy — signups are write-only from the client.
+- Vault resurface interval fixed at 30 days (constant in `src/lib/vault.ts`) — "periodically" wasn't specified; simplest honest reading. Easy to make configurable later.
+- Archived ideas are hidden but kept in the DB (no hard delete) so the vault's history stays available for v2 reflection features.
