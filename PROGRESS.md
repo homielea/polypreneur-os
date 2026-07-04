@@ -58,3 +58,8 @@ All three spec features plus the landing page are built, tested (13 vitest tests
 - `waitlist_signups` RLS: insert-only for anon/authenticated, no read policy — signups are write-only from the client.
 - Vault resurface interval fixed at 30 days (constant in `src/lib/vault.ts`) — "periodically" wasn't specified; simplest honest reading. Easy to make configurable later.
 - Archived ideas are hidden but kept in the DB (no hard delete) so the vault's history stays available for v2 reflection features.
+
+## Post-v1 — Live e2e attempt + scripted harness (2026-07-04)
+
+- Attempted the live e2e pass against the real Supabase project; still blocked — the environment's egress gateway returns 403 (policy denial) for `*.supabase.co` while control hosts connect fine. Details logged in BLOCKERS.md.
+- Added `npm run e2e:live` (`scripts/live-e2e.mjs`, Playwright): one command runs the full pass — auth → create → complete → totals → reload persistence → anonymous waitlist — against the production build in headless Chromium, with connectivity preflight, proxy awareness for sandboxes, and post-run cleanup of test rows. Harness plumbing verified here via its `E2E_UI_SMOKE=1` mode (build + serve + browser + logged-out pages) and the preflight path (clean exit 2 with the blocker message).
