@@ -19,7 +19,13 @@ const b64url = (obj) => Buffer.from(JSON.stringify(obj)).toString("base64url");
 export function startMockSupabase({ port = 54321 } = {}) {
   const users = new Map(); // email → { id, email, password }
   const refreshTokens = new Map(); // token → userId
-  const tables = { actions: [], score_events: [], waitlist_signups: [] };
+  const tables = {
+    actions: [],
+    score_events: [],
+    ledger_entries: [],
+    ideas: [],
+    waitlist_signups: [],
+  };
 
   const makeSession = (user) => {
     const refresh = randomUUID();

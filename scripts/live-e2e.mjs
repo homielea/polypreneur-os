@@ -307,6 +307,53 @@ try {
       .waitFor();
     step(`neglect radar — quiet category surfaced with "quiet for ${QUIET_DAYS} days" reason`);
 
+    // --- reflection pipe ---
+    // Three fresh tagged judgments make a theme "ready": a matching-category
+    // action must pick up the reflection-pipe reason, and the Pipe page must
+    // group the entries with a copyable digest.
+    {
+      const { data: me } = await api.auth.getUser();
+      const uid = me.user.id;
+      const { error: pipeActionErr } = await api.from("actions").insert({
+        user_id: uid,
+        title: `pipe probe ${stamp}`,
+        category: "pipe-probe",
+        leverage: 1,
+        notes: "",
+        source: "manual",
+      });
+      if (pipeActionErr) throw new Error(`pipe action insert failed: ${pipeActionErr.message}`);
+      const { error: entriesErr } = await api.from("ledger_entries").insert(
+        [1, 2, 3].map((n) => ({
+          user_id: uid,
+          situation: `pipe probe situation ${n}`,
+          judgment: `pipe probe judgment ${n}`,
+          outcome: "",
+          tags: ["pipe-probe"],
+        })),
+      );
+      if (entriesErr) throw new Error(`pipe entries insert failed: ${entriesErr.message}`);
+    }
+    await page.reload();
+    await page
+      .locator("li:not([data-sonner-toast])", { hasText: `pipe probe ${stamp}` })
+      .getByText("3 fresh judgments tagged pipe-probe")
+      .waitFor();
+    await page.getByRole("link", { name: "Pipe" }).click();
+    await page.getByRole("heading", { name: "Content Pipe" }).waitFor();
+    const pipeGroup = page.locator("section", { hasText: "pipe-probe" });
+    await pipeGroup.getByText("ready to draft").waitFor();
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await pipeGroup.getByRole("button", { name: "Copy digest" }).click();
+    await page.getByText("Digest copied").waitFor();
+    const digest = await page.evaluate(() => navigator.clipboard.readText());
+    if (!digest.includes("# pipe-probe — judgment log") || !digest.includes("pipe probe judgment 1")) {
+      throw new Error(`copied digest is missing expected content:\n${digest.slice(0, 200)}`);
+    }
+    await page.getByRole("link", { name: "Today" }).click();
+    await page.getByRole("heading", { name: "Today" }).waitFor();
+    step("reflection pipe — ready theme boosts its action and the digest copies");
+
     // --- create ---
     await page.getByLabel("Action title").fill(ACTION_TITLE);
     await page.getByLabel("Category").fill(CATEGORY);
@@ -377,6 +424,7 @@ try {
         const uid = auth.user.id;
         await api.from("score_events").delete().eq("user_id", uid);
         await api.from("actions").delete().eq("user_id", uid);
+        await api.from("ledger_entries").delete().eq("user_id", uid);
         await api.auth.signOut();
         console.log(
           `  · cleaned up test rows (the auth user ${EMAIL} and its waitlist row need` +

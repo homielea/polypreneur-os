@@ -8,6 +8,11 @@ export interface ScoringContext {
    * map = data not loaded yet, and activity-based providers stay silent.
    */
   categoryActivity?: Record<string, string>;
+  /**
+   * Fresh ledger material per tag (entries within the material window) — the
+   * Reflection Pipe's input. Undefined = ledger not loaded; provider stays silent.
+   */
+  reflectionMaterial?: Record<string, number>;
 }
 
 /** One provider's score contribution to one action. Points are always positive — additive only. */

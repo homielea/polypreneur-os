@@ -1,3 +1,4 @@
+import { MATERIAL_READY_THRESHOLD } from "@/lib/pipe";
 import type { Contribution, LeverageProvider } from "./types";
 
 /** The user's own 1–5 leverage rating is the primary ranking signal in v1. */
@@ -58,6 +59,36 @@ export const neglectRadar: LeverageProvider = {
             : NEGLECT_BOOSTS.quiet,
         reason: `${action.category} quiet for ${daysQuiet} days`,
         providerId: "neglect-radar",
+      });
+    }
+    return contributions;
+  },
+};
+
+/** Additive boost when an action's category has draft-ready reflection material. */
+export const REFLECTION_BOOST = 12;
+
+/**
+ * Reflection → Content Pipe (v2), scoring side: when a tag has gathered enough
+ * fresh judgments in the ledger (MATERIAL_READY_THRESHOLD within the material
+ * window), acting on that theme is high-leverage — the material is ready, so
+ * matching-category actions get a nudge. Additive only; silent until the
+ * ledger has loaded.
+ */
+export const reflectionPipe: LeverageProvider = {
+  id: "reflection-pipe",
+  score: (actions, ctx) => {
+    const material = ctx.reflectionMaterial;
+    if (!material) return [];
+    const contributions: Contribution[] = [];
+    for (const action of actions) {
+      const count = material[action.category] ?? 0;
+      if (count < MATERIAL_READY_THRESHOLD) continue;
+      contributions.push({
+        actionId: action.id,
+        points: REFLECTION_BOOST,
+        reason: `${count} fresh judgments tagged ${action.category}`,
+        providerId: "reflection-pipe",
       });
     }
     return contributions;

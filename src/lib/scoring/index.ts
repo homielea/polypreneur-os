@@ -1,5 +1,5 @@
 import { ScoringEngine } from "./engine";
-import { manualLeverage, neglectRadar, top20Boost } from "./providers";
+import { manualLeverage, neglectRadar, reflectionPipe, top20Boost } from "./providers";
 import { createSupabaseScoreStore } from "./supabaseStore";
 
 export * from "./types";
@@ -7,6 +7,7 @@ export { ScoringEngine } from "./engine";
 export {
   manualLeverage,
   neglectRadar,
+  reflectionPipe,
   top20Boost,
   ACTIVITY_LOOKBACK_DAYS,
 } from "./providers";
@@ -16,3 +17,4 @@ export const scoringEngine = new ScoringEngine(createSupabaseScoreStore());
 scoringEngine.registerProvider(manualLeverage);
 scoringEngine.registerProvider(top20Boost);
 scoringEngine.registerProvider(neglectRadar);
+scoringEngine.registerProvider(reflectionPipe);

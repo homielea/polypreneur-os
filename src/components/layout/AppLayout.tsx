@@ -1,5 +1,5 @@
 import { NavLink, Navigate, Outlet, useLocation } from "react-router-dom";
-import { Compass, Lightbulb, LogOut, ScrollText } from "lucide-react";
+import { Compass, Lightbulb, LogOut, ScrollText, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { LedgerQuickCapture } from "@/components/ledger/LedgerQuickCapture";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ const navItems = [
   { to: "/app", label: "Today", icon: Compass, end: true },
   { to: "/app/ledger", label: "Ledger", icon: ScrollText, end: false },
   { to: "/app/ideas", label: "Ideas", icon: Lightbulb, end: false },
+  { to: "/app/pipe", label: "Pipe", icon: Send, end: false },
 ];
 
 export default function AppLayout() {

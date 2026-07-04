@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { format } from "date-fns";
 import { useOpenActions } from "@/hooks/useActions";
 import { useCategoryActivity } from "@/hooks/useCategoryActivity";
+import { useReflectionMaterial } from "@/hooks/useReflectionMaterial";
 import { scoringEngine } from "@/lib/scoring";
 import { ActionComposer } from "@/components/today/ActionComposer";
 import { ActionRow } from "@/components/today/ActionRow";
@@ -10,10 +11,14 @@ import { CategoryTotals } from "@/components/today/CategoryTotals";
 export default function Today() {
   const { data: actions, isLoading, error } = useOpenActions();
   const { data: categoryActivity } = useCategoryActivity();
+  const reflectionMaterial = useReflectionMaterial();
 
   const ranked = useMemo(
-    () => (actions ? scoringEngine.rank(actions, { now: new Date(), categoryActivity }) : []),
-    [actions, categoryActivity],
+    () =>
+      actions
+        ? scoringEngine.rank(actions, { now: new Date(), categoryActivity, reflectionMaterial })
+        : [],
+    [actions, categoryActivity, reflectionMaterial],
   );
 
   return (

@@ -10,6 +10,7 @@ import Login from "@/pages/Login";
 import Today from "@/pages/Today";
 import Ledger from "@/pages/Ledger";
 import Ideas from "@/pages/Ideas";
+import Pipe from "@/pages/Pipe";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -35,6 +36,7 @@ const App = () => (
                 <Route index element={<Today />} />
                 <Route path="ledger" element={<Ledger />} />
                 <Route path="ideas" element={<Ideas />} />
+                <Route path="pipe" element={<Pipe />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
