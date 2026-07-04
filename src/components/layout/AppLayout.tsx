@@ -1,6 +1,7 @@
 import { NavLink, Navigate, Outlet, useLocation } from "react-router-dom";
 import { Compass, Lightbulb, LogOut, ScrollText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { LedgerQuickCapture } from "@/components/ledger/LedgerQuickCapture";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -60,9 +61,10 @@ export default function AppLayout() {
           </Button>
         </div>
       </aside>
-      <main className="flex-1 px-4 py-6 md:px-8">
+      <main className="flex-1 px-4 py-6 pb-24 md:px-8">
         <Outlet />
       </main>
+      <LedgerQuickCapture />
     </div>
   );
 }

@@ -18,6 +18,12 @@ Build log for Polypreneur OS v1 (spec: `polypreneur-os-fable5-spec.md`). One or 
 - Today screen: quick add (title / category / leverage), ranked open-action list with complete + delete, quiet "gathered this week" per-category totals — no targets, streaks, or comparisons.
 - Completing an action records a score event worth its leverage rating in its category.
 
+## Feature 3 — Great Inversion Ledger
+
+- Global quick-capture mounted once in the app layout: floating "Log judgment" button + ⌘/Ctrl+J from anywhere in the app; sheet with situation / judgment / outcome / tags. Only situation + judgment required — outcome can be added when known (low capture friction).
+- Ledger page: reverse-chronological entry cards with timestamps, tag badges, hover-delete, and tag-filter chips (groundwork for the v2 Reflection → Content Pipe).
+- Tags normalized (trimmed, lowercased, deduped) by `parseTags` — 3 more vitest tests (10 total).
+
 ### Decisions (approved or per default rules)
 
 - Kept the Vite + React + shadcn scaffold instead of the spec's Next.js — approved by Lea (simpler; nothing in v1 needs SSR).
