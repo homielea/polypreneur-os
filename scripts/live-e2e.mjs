@@ -19,6 +19,10 @@
  *   E2E_KEEP_DATA=1 — skip deleting the rows the run created.
  *   E2E_UI_SMOKE=1 — skip Supabase entirely; just build, serve, and check the
  *     logged-out landing + login pages render (validates the harness itself).
+ *   E2E_MOCK=1 — run every step against a local in-memory Supabase mock
+ *     (scripts/mock-supabase.mjs) instead of the hosted project. Verifies the
+ *     app + harness end-to-end without network, but is NOT the live pass:
+ *     the real schema, RLS, and auth settings stay unverified.
  *
  * Exit codes: 0 pass · 1 step failed · 2 Supabase unreachable (network policy).
  */
@@ -48,12 +52,25 @@ function loadDotEnv(file) {
   return out;
 }
 
+const MOCK = process.env.E2E_MOCK === "1";
 const dotenv = { ...loadDotEnv(".env.example"), ...loadDotEnv(".env") };
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? dotenv.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY =
+let SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? dotenv.VITE_SUPABASE_URL;
+let SUPABASE_ANON_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ?? dotenv.VITE_SUPABASE_ANON_KEY;
 
-if (!UI_SMOKE && (!SUPABASE_URL || !SUPABASE_ANON_KEY)) {
+let mock = null;
+if (MOCK) {
+  const { startMockSupabase } = await import("./mock-supabase.mjs");
+  mock = await startMockSupabase({ port: Number(process.env.E2E_MOCK_PORT ?? 54321) });
+  SUPABASE_URL = mock.url;
+  SUPABASE_ANON_KEY = mock.anonKey;
+  console.log(
+    `MOCK MODE — app flow verified against a local Supabase mock (${mock.url}).` +
+      " This is NOT the live pass: real schema/RLS/auth settings stay unverified.",
+  );
+}
+
+if (!UI_SMOKE && !MOCK && (!SUPABASE_URL || !SUPABASE_ANON_KEY)) {
   console.error("✗ No Supabase credentials found (.env / .env.example / env vars).");
   process.exit(1);
 }
@@ -110,7 +127,10 @@ if (!UI_SMOKE) {
   console.log(`Preflight: checking ${SUPABASE_URL} is reachable…`);
   const unreachable = await supabaseReachable();
   if (!unreachable) {
-    step("Supabase reachable (auth health OK)");
+    step(MOCK ? "mock Supabase up (auth health OK)" : "Supabase reachable (auth health OK)");
+  } else if (MOCK) {
+    console.error(`✗ Local mock did not come up: ${unreachable}`);
+    process.exit(1);
   } else {
     console.error(`✗ Cannot reach the Supabase project: ${unreachable}`);
     console.error(
@@ -260,7 +280,9 @@ try {
     await page.getByLabel("Action title").fill(ACTION_TITLE);
     await page.getByLabel("Category").fill(CATEGORY);
     await page.getByRole("button", { name: "Add", exact: true }).click();
-    const row = page.locator("li", { hasText: ACTION_TITLE });
+    // :not([data-sonner-toast]) — the success toast is also an <li> that
+    // contains the action title, and would trip strict mode / never detach.
+    const row = page.locator("li:not([data-sonner-toast])", { hasText: ACTION_TITLE });
     await row.waitFor();
     if (!/leverage/i.test(await row.innerText())) {
       throw new Error("created action row is missing its ranking reason");
@@ -338,7 +360,10 @@ try {
     }
   }
 
-  console.log(`\nPASS — ${passed.length} step${passed.length === 1 ? "" : "s"}:`);
+  console.log(
+    `\nPASS${MOCK ? " (MOCK — live pass against the hosted project still required)" : ""} — ` +
+      `${passed.length} step${passed.length === 1 ? "" : "s"}:`,
+  );
   for (const name of passed) console.log(`  ✓ ${name}`);
   if (consoleErrors.length) {
     console.log(`\n${consoleErrors.length} browser console error(s) observed:`);
@@ -360,6 +385,7 @@ try {
 } finally {
   await browser.close();
   stopServer();
+  if (mock) await mock.close();
 }
 
 process.exit(exitCode);
