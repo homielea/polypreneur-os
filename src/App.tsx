@@ -1,10 +1,11 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
+import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Today from "@/pages/Today";
 import Ledger from "@/pages/Ledger";
@@ -28,8 +29,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              {/* "/" becomes the public landing page in build step 5 */}
-              <Route path="/" element={<Navigate to="/app" replace />} />
+              <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/app" element={<AppLayout />}>
                 <Route index element={<Today />} />

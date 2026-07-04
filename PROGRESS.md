@@ -2,6 +2,10 @@
 
 Build log for Polypreneur OS v1 (spec: `polypreneur-os-fable5-spec.md`). One or two lines per commit, newest last.
 
+## v1 status: COMPLETE
+
+All three spec features plus the landing page are built, tested (13 vitest tests), and pushed. See BLOCKERS.md for the one open item (live e2e verification blocked by the build sandbox's network policy — works on a normal machine). What I'd do next if the session continued: a live end-to-end pass against the real Supabase project from a network-enabled session, then deployment (needs Lea — hard-stop item), then v2 groundwork (Neglect Radar as a third `LeverageProvider`, Reflection → Content Pipe reading ledger tags).
+
 ## Feature 1 — App shell + auth + Supabase schema
 
 - Committed the v1 spec and brand context (`.agents/product-marketing-context.md`) into the repo.
@@ -29,6 +33,12 @@ Build log for Polypreneur OS v1 (spec: `polypreneur-os-fable5-spec.md`). One or 
 - Idea capture on the Ideas page with a forced triage step: there is no plain save — every capture answers "is this in the top 20% of leverage right now?". Vault is the low-friction default; acting requires picking a category + leverage and lands the idea on Today as an `idea_promotion` action (which earns the top20-boost in ranking).
 - Vault resurfacing: vaulted ideas rest for 30 days, then move to a gentle "Worth another look?" queue with three choices — act on it, rest another interval, or let go (archived, never deleted). No due dates, nothing turns red.
 - `partitionVault` / `nextResurfaceDate` helpers in `src/lib/vault.ts` with 3 more tests (13 total).
+
+## Feature 5 — Landing page
+
+- Public `/` route: hero, scene-first problem/positioning section built around The Great Inversion, the three v1 features as proof points, maker note signed by Lea, waitlist capture (top + bottom) writing to `waitlist_signups`.
+- Copy written directly from `.agents/product-marketing-context.md` guardrails: no countdowns, no scarcity, no gamified urgency; duplicate signups get a friendly "already on the list" instead of an error; quiet "Flow on." footer.
+- Verified in headless Chromium against the production build: all sections render, no console errors (screenshot shared in session).
 
 ### Decisions (approved or per default rules)
 
