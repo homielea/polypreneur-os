@@ -2,6 +2,12 @@ import type { ActionRecord } from "@/types/domain";
 
 export interface ScoringContext {
   now: Date;
+  /**
+   * Most recent score-event timestamp (ISO) per category, within the app's
+   * lookback window. Absent key = no recorded points in the window; undefined
+   * map = data not loaded yet, and activity-based providers stay silent.
+   */
+  categoryActivity?: Record<string, string>;
 }
 
 /** One provider's score contribution to one action. Points are always positive — additive only. */

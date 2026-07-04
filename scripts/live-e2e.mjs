@@ -276,6 +276,37 @@ try {
     await page.getByRole("heading", { name: "Today" }).waitFor();
     step(`auth — signed ${usingProvidedAccount ? "in" : "up"} as ${EMAIL}, landed on Today`);
 
+    // --- neglect radar ---
+    // Seed a backdated open action in a category with no score events; the
+    // radar anchors such categories to their oldest open action, so the row
+    // must surface with a "quiet for N days" ranking reason.
+    const { createClient } = await import("@supabase/supabase-js");
+    const api = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const QUIET_DAYS = 20;
+    {
+      const { data: seedAuth, error: seedErr } = await api.auth.signInWithPassword({
+        email: EMAIL,
+        password: PASSWORD,
+      });
+      if (seedErr) throw new Error(`radar seed sign-in failed: ${seedErr.message}`);
+      const { error: probeErr } = await api.from("actions").insert({
+        user_id: seedAuth.user.id,
+        title: `radar probe ${stamp}`,
+        category: "quiet-probe",
+        leverage: 1,
+        notes: "",
+        source: "manual",
+        created_at: new Date(Date.now() - QUIET_DAYS * 86_400_000).toISOString(),
+      });
+      if (probeErr) throw new Error(`radar probe insert failed: ${probeErr.message}`);
+    }
+    await page.reload();
+    await page
+      .locator("li:not([data-sonner-toast])", { hasText: `radar probe ${stamp}` })
+      .getByText(`quiet-probe quiet for ${QUIET_DAYS} days`)
+      .waitFor();
+    step(`neglect radar — quiet category surfaced with "quiet for ${QUIET_DAYS} days" reason`);
+
     // --- create ---
     await page.getByLabel("Action title").fill(ACTION_TITLE);
     await page.getByLabel("Category").fill(CATEGORY);
@@ -339,19 +370,14 @@ try {
 
     // --- cleanup ---
     if (process.env.E2E_KEEP_DATA !== "1") {
-      const { createClient } = await import("@supabase/supabase-js");
-      const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      const { data: auth, error: authErr } = await sb.auth.signInWithPassword({
-        email: EMAIL,
-        password: PASSWORD,
-      });
+      const { data: auth, error: authErr } = await api.auth.getUser();
       if (authErr) {
         console.warn(`  ! cleanup skipped: ${authErr.message}`);
       } else {
         const uid = auth.user.id;
-        await sb.from("score_events").delete().eq("user_id", uid);
-        await sb.from("actions").delete().eq("user_id", uid);
-        await sb.auth.signOut();
+        await api.from("score_events").delete().eq("user_id", uid);
+        await api.from("actions").delete().eq("user_id", uid);
+        await api.auth.signOut();
         console.log(
           `  · cleaned up test rows (the auth user ${EMAIL} and its waitlist row need` +
             " the dashboard/service key to remove — RLS keeps them invisible to others)",
