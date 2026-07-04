@@ -1,23 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
-import { subDays } from "date-fns";
 import { supabase } from "@/lib/supabase";
-import { ACTIVITY_LOOKBACK_DAYS } from "@/lib/scoring";
 import { scoreTotalsKey } from "@/hooks/useActions";
 
 /**
- * Most recent score-event timestamp per category within the lookback window —
- * the Neglect Radar's input. Keyed under scoreTotalsKey so completing an
- * action (which invalidates that prefix) refreshes this too.
+ * Most recent score-event timestamp per category, all-time — the Neglect
+ * Radar's input. No date window: a bounded window can't distinguish "never
+ * gathered points" from "gathered points long ago", which made long-dormant
+ * categories with a fresh action read as not neglected. Two-column
+ * projection keeps the payload small at personal scale; if event volume ever
+ * matters, replace with a SQL MAX(created_at) GROUP BY category view/RPC.
+ *
+ * Keyed under scoreTotalsKey so completing an action (which invalidates that
+ * prefix) refreshes this too.
  */
 export function useCategoryActivity() {
   return useQuery({
     queryKey: [...scoreTotalsKey, "category-activity"],
     queryFn: async (): Promise<Record<string, string>> => {
-      const since = subDays(new Date(), ACTIVITY_LOOKBACK_DAYS);
-      const { data, error } = await supabase
-        .from("score_events")
-        .select("category, created_at")
-        .gte("created_at", since.toISOString());
+      const { data, error } = await supabase.from("score_events").select("category, created_at");
       if (error) throw new Error(error.message);
       const latest: Record<string, string> = {};
       for (const row of data ?? []) {

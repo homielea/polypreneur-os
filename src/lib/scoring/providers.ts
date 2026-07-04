@@ -13,9 +13,6 @@ export const manualLeverage: LeverageProvider = {
     })),
 };
 
-/** How far back the app fetches score events when building `categoryActivity`. */
-export const ACTIVITY_LOOKBACK_DAYS = 60;
-
 /** Quiet thresholds (days without gathered points) and their additive boosts. */
 export const NEGLECT_QUIET_AFTER_DAYS = 7;
 export const NEGLECT_VERY_QUIET_AFTER_DAYS = 14;
@@ -30,8 +27,9 @@ const DAY_MS = 86_400_000;
  * clearly higher-leverage action, and there is no penalty side (additive only,
  * per the anti-gamification stance).
  *
- * Categories with no recorded points at all are anchored to their oldest open
- * action, so a brand-new venture isn't "neglected" on day one.
+ * Categories that have never recorded points are anchored to their oldest
+ * open action, so a brand-new venture isn't "neglected" on day one.
+ * (`categoryActivity` is all-time, so an absent key really means "never".)
  */
 export const neglectRadar: LeverageProvider = {
   id: "neglect-radar",
@@ -82,7 +80,9 @@ export const reflectionPipe: LeverageProvider = {
     if (!material) return [];
     const contributions: Contribution[] = [];
     for (const action of actions) {
-      const count = material[action.category] ?? 0;
+      // Tags are lowercased at capture (parseTags); categories are free-typed.
+      // Bridge case-insensitively so "Pricing" the category meets "pricing" the tag.
+      const count = material[action.category.toLowerCase()] ?? 0;
       if (count < MATERIAL_READY_THRESHOLD) continue;
       contributions.push({
         actionId: action.id,

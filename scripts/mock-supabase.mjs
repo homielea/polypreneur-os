@@ -93,7 +93,11 @@ export function startMockSupabase({ port = 54321 } = {}) {
       const chunks = [];
       for await (const c of req) chunks.push(c);
       const raw = Buffer.concat(chunks).toString();
-      body = raw ? JSON.parse(raw) : null;
+      try {
+        body = raw ? JSON.parse(raw) : null;
+      } catch {
+        return send(400, { code: "PGRST102", message: "Invalid JSON body" });
+      }
     }
 
     // ---------- GoTrue ----------
@@ -147,12 +151,15 @@ export function startMockSupabase({ port = 54321 } = {}) {
       if (!rows) return send(404, { code: "42P01", message: `relation "${table}" does not exist` });
 
       const auth = userFromAuth(req);
-      const scoped = table === "waitlist_signups" ? null : auth; // waitlist is anon-insertable
-      if (scoped === undefined) return send(401, { message: "JWT required" });
+      // Real PostgREST 401s a missing/invalid user JWT on RLS-protected tables;
+      // only the waitlist accepts anonymous (insert-only) access.
+      if (table !== "waitlist_signups" && !auth) {
+        return send(401, { code: "PGRST301", message: "JWT expired or invalid" });
+      }
+      const scoped = table === "waitlist_signups" ? null : auth;
 
       // RLS approximation: authenticated tables only ever see the caller's rows.
-      const visible = () =>
-        scoped ? rows.filter((r) => r.user_id === scoped.id) : table === "waitlist_signups" ? [] : [];
+      const visible = () => (scoped ? rows.filter((r) => r.user_id === scoped.id) : []);
 
       const matches = (row) => {
         for (const [key, values] of [...url.searchParams].reduce((m, [k, v]) => {

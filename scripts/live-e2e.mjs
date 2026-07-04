@@ -82,6 +82,11 @@ const usingProvidedAccount = Boolean(process.env.E2E_EMAIL);
 const ACTION_TITLE = `e2e verify ${stamp}`;
 const CATEGORY = "e2e";
 const LEVERAGE = 3; // composer default — completion should record +3 in "e2e"
+// Probe names carry the stamp so reruns against a reused account (E2E_EMAIL,
+// E2E_KEEP_DATA, or a failed earlier run) can't shift this run's day counts
+// or material counts and cause false FAILs.
+const RADAR_CATEGORY = `quiet-probe-${stamp}`;
+const PIPE_TAG = `pipe-probe-${stamp}`;
 
 const passed = [];
 const step = (name) => {
@@ -196,8 +201,29 @@ async function launch() {
     // Pre-provisioned browser may not match the installed playwright version.
     const fallback = "/opt/pw-browsers/chromium";
     if (existsSync(fallback)) return chromium.launch({ ...opts, executablePath: fallback });
+    if (/Executable doesn't exist/i.test(String(err?.message))) {
+      throw new Error(
+        'Playwright\'s Chromium isn\'t installed. Run "npx playwright install chromium" once, then re-run.',
+      );
+    }
     throw err;
   }
+}
+
+/**
+ * Node-side Supabase client for seeding probes and cleaning up test rows.
+ * Node's fetch ignores HTTPS_PROXY, so in proxied sandboxes (live mode only —
+ * the mock is on localhost) API traffic is routed through the proxy explicitly.
+ */
+async function makeApiClient() {
+  const { createClient } = await import("@supabase/supabase-js");
+  const opts = { auth: { persistSession: false } };
+  if (PROXY && !MOCK) {
+    const { ProxyAgent, fetch: proxiedFetch } = await import("undici");
+    const dispatcher = new ProxyAgent(PROXY);
+    opts.global = { fetch: (url, init) => proxiedFetch(url, { ...init, dispatcher }) };
+  }
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, opts);
 }
 
 const browser = await launch();
@@ -215,6 +241,35 @@ async function newPage(context) {
 let exitCode = 0;
 const context = await browser.newContext();
 const page = await newPage(context);
+
+// API client + rows created by this run — cleanup targets ONLY these ids, so
+// running against a real account (E2E_EMAIL) never touches pre-existing data.
+let api = null;
+let uid = null;
+const seeded = { actionIds: [], ledgerIds: [] };
+
+async function cleanupTestRows() {
+  if (UI_SMOKE || process.env.E2E_KEEP_DATA === "1" || !api || !uid) return;
+  try {
+    // The UI-created action is looked up by its stamped (unique) title.
+    const { data: uiRows } = await api.from("actions").select("id").eq("title", ACTION_TITLE);
+    const actionIds = [...seeded.actionIds, ...(uiRows ?? []).map((r) => r.id)];
+    for (const id of actionIds) {
+      await api.from("score_events").delete().eq("action_id", id);
+      await api.from("actions").delete().eq("id", id);
+    }
+    for (const id of seeded.ledgerIds) {
+      await api.from("ledger_entries").delete().eq("id", id);
+    }
+    await api.auth.signOut();
+    console.log(
+      `  · cleaned up ${actionIds.length} action(s) + ${seeded.ledgerIds.length} ledger entr(y/ies)` +
+        ` created by this run (the auth user ${EMAIL} and its waitlist row need the dashboard/service key to remove)`,
+    );
+  } catch (err) {
+    console.warn(`  ! cleanup incomplete: ${err.message ?? err}`);
+  }
+}
 
 try {
   if (UI_SMOKE) {
@@ -253,7 +308,9 @@ try {
       if (outcome === "created") {
         await page.getByLabel("Email").fill(EMAIL);
         await page.getByLabel("Password").fill(PASSWORD);
-        await page.getByRole("button", { name: "Sign in" }).click();
+        // exact: the mode-toggle button ("Already have an account? Sign in")
+        // also substring-matches "Sign in" and would trip strict mode.
+        await page.getByRole("button", { name: "Sign in", exact: true }).click();
         const signin = await Promise.race([
           page.waitForURL("**/app**").then(() => "in"),
           page.locator("p.text-destructive").waitFor().then(() => "error"),
@@ -280,8 +337,7 @@ try {
     // Seed a backdated open action in a category with no score events; the
     // radar anchors such categories to their oldest open action, so the row
     // must surface with a "quiet for N days" ranking reason.
-    const { createClient } = await import("@supabase/supabase-js");
-    const api = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    api = await makeApiClient();
     const QUIET_DAYS = 20;
     {
       const { data: seedAuth, error: seedErr } = await api.auth.signInWithPassword({
@@ -289,21 +345,27 @@ try {
         password: PASSWORD,
       });
       if (seedErr) throw new Error(`radar seed sign-in failed: ${seedErr.message}`);
-      const { error: probeErr } = await api.from("actions").insert({
-        user_id: seedAuth.user.id,
-        title: `radar probe ${stamp}`,
-        category: "quiet-probe",
-        leverage: 1,
-        notes: "",
-        source: "manual",
-        created_at: new Date(Date.now() - QUIET_DAYS * 86_400_000).toISOString(),
-      });
+      uid = seedAuth.user.id;
+      const { data: probe, error: probeErr } = await api
+        .from("actions")
+        .insert({
+          user_id: uid,
+          title: `radar probe ${stamp}`,
+          category: RADAR_CATEGORY,
+          leverage: 1,
+          notes: "",
+          source: "manual",
+          created_at: new Date(Date.now() - QUIET_DAYS * 86_400_000).toISOString(),
+        })
+        .select("id")
+        .single();
       if (probeErr) throw new Error(`radar probe insert failed: ${probeErr.message}`);
+      seeded.actionIds.push(probe.id);
     }
     await page.reload();
     await page
       .locator("li:not([data-sonner-toast])", { hasText: `radar probe ${stamp}` })
-      .getByText(`quiet-probe quiet for ${QUIET_DAYS} days`)
+      .getByText(`${RADAR_CATEGORY} quiet for ${QUIET_DAYS} days`)
       .waitFor();
     step(`neglect radar — quiet category surfaced with "quiet for ${QUIET_DAYS} days" reason`);
 
@@ -312,42 +374,49 @@ try {
     // action must pick up the reflection-pipe reason, and the Pipe page must
     // group the entries with a copyable digest.
     {
-      const { data: me } = await api.auth.getUser();
-      const uid = me.user.id;
-      const { error: pipeActionErr } = await api.from("actions").insert({
-        user_id: uid,
-        title: `pipe probe ${stamp}`,
-        category: "pipe-probe",
-        leverage: 1,
-        notes: "",
-        source: "manual",
-      });
-      if (pipeActionErr) throw new Error(`pipe action insert failed: ${pipeActionErr.message}`);
-      const { error: entriesErr } = await api.from("ledger_entries").insert(
-        [1, 2, 3].map((n) => ({
+      const { data: pipeAction, error: pipeActionErr } = await api
+        .from("actions")
+        .insert({
           user_id: uid,
-          situation: `pipe probe situation ${n}`,
-          judgment: `pipe probe judgment ${n}`,
-          outcome: "",
-          tags: ["pipe-probe"],
-        })),
-      );
+          title: `pipe probe ${stamp}`,
+          category: PIPE_TAG,
+          leverage: 1,
+          notes: "",
+          source: "manual",
+        })
+        .select("id")
+        .single();
+      if (pipeActionErr) throw new Error(`pipe action insert failed: ${pipeActionErr.message}`);
+      seeded.actionIds.push(pipeAction.id);
+      const { data: entryRows, error: entriesErr } = await api
+        .from("ledger_entries")
+        .insert(
+          [1, 2, 3].map((n) => ({
+            user_id: uid,
+            situation: `pipe probe situation ${n}`,
+            judgment: `pipe probe judgment ${n}`,
+            outcome: "",
+            tags: [PIPE_TAG],
+          })),
+        )
+        .select("id");
       if (entriesErr) throw new Error(`pipe entries insert failed: ${entriesErr.message}`);
+      seeded.ledgerIds.push(...entryRows.map((r) => r.id));
     }
     await page.reload();
     await page
       .locator("li:not([data-sonner-toast])", { hasText: `pipe probe ${stamp}` })
-      .getByText("3 fresh judgments tagged pipe-probe")
+      .getByText(`3 fresh judgments tagged ${PIPE_TAG}`)
       .waitFor();
     await page.getByRole("link", { name: "Pipe" }).click();
     await page.getByRole("heading", { name: "Content Pipe" }).waitFor();
-    const pipeGroup = page.locator("section", { hasText: "pipe-probe" });
+    const pipeGroup = page.locator("section", { hasText: PIPE_TAG });
     await pipeGroup.getByText("ready to draft").waitFor();
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await pipeGroup.getByRole("button", { name: "Copy digest" }).click();
     await page.getByText("Digest copied").waitFor();
     const digest = await page.evaluate(() => navigator.clipboard.readText());
-    if (!digest.includes("# pipe-probe — judgment log") || !digest.includes("pipe probe judgment 1")) {
+    if (!digest.includes(`# ${PIPE_TAG} — judgment log`) || !digest.includes("pipe probe judgment 1")) {
       throw new Error(`copied digest is missing expected content:\n${digest.slice(0, 200)}`);
     }
     await page.getByRole("link", { name: "Today" }).click();
@@ -414,24 +483,6 @@ try {
     await landing.getByText(/on the list/i).first().waitFor();
     step("waitlist — anonymous signup accepted on the landing page");
     await anon.close();
-
-    // --- cleanup ---
-    if (process.env.E2E_KEEP_DATA !== "1") {
-      const { data: auth, error: authErr } = await api.auth.getUser();
-      if (authErr) {
-        console.warn(`  ! cleanup skipped: ${authErr.message}`);
-      } else {
-        const uid = auth.user.id;
-        await api.from("score_events").delete().eq("user_id", uid);
-        await api.from("actions").delete().eq("user_id", uid);
-        await api.from("ledger_entries").delete().eq("user_id", uid);
-        await api.auth.signOut();
-        console.log(
-          `  · cleaned up test rows (the auth user ${EMAIL} and its waitlist row need` +
-            " the dashboard/service key to remove — RLS keeps them invisible to others)",
-        );
-      }
-    }
   }
 
   console.log(
@@ -457,6 +508,10 @@ try {
     for (const e of consoleErrors.slice(0, 10)) console.error(`  - ${e}`);
   }
 } finally {
+  // Runs on failure too — a mid-run abort must not leave probe rows in the
+  // live project. Only rows created by this run are deleted (tracked ids +
+  // the stamped UI action title), never the account's pre-existing data.
+  await cleanupTestRows();
   await browser.close();
   stopServer();
   if (mock) await mock.close();

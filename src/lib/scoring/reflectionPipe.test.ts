@@ -49,11 +49,18 @@ describe("reflectionPipe provider", () => {
     expect(c.providerId).toBe("reflection-pipe");
   });
 
-  it("matches category to tag exactly and leaves other categories alone", () => {
+  it("matches category to tag and leaves other categories alone", () => {
     const content = makeAction({ id: "c", category: "content" });
     const retreats = makeAction({ id: "r", category: "retreats" });
     const contributions = reflectionPipe.score([content, retreats], ctx({ content: 5 }));
     expect(contributions.map((c) => c.actionId)).toEqual(["c"]);
+  });
+
+  it("bridges case-insensitively: a 'Pricing' category meets lowercased 'pricing' tags", () => {
+    const action = makeAction({ id: "p", category: "Pricing" });
+    const [c] = reflectionPipe.score([action], ctx({ pricing: 3 }));
+    expect(c.points).toBe(REFLECTION_BOOST);
+    expect(c.reason).toBe("3 fresh judgments tagged Pricing");
   });
 });
 

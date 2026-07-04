@@ -23,7 +23,7 @@ export interface TagGroup {
   recentCount: number;
 }
 
-const isRecent = (entry: LedgerEntry, now: Date) =>
+const isRecent = (entry: MaterialEntry, now: Date) =>
   now.getTime() - new Date(entry.created_at).getTime() <= MATERIAL_WINDOW_DAYS * DAY_MS;
 
 /** Group entries under each of their tags; richest fresh material first. */
@@ -50,12 +50,23 @@ export function groupByTag(entries: LedgerEntry[], now: Date): TagGroup[] {
     );
 }
 
-/** Fresh-material counts per tag — the reflection-pipe provider's input. */
-export function reflectionMaterial(entries: LedgerEntry[], now: Date): Record<string, number> {
+/** The slice of a ledger entry the material count needs — lets callers fetch narrow. */
+export type MaterialEntry = Pick<LedgerEntry, "tags" | "created_at">;
+
+/**
+ * Fresh-material counts per tag — the reflection-pipe provider's input.
+ * Keys are lowercased (parseTags already lowercases at capture; this also
+ * covers rows written through other paths) so the provider's
+ * case-insensitive category lookup always lands.
+ */
+export function reflectionMaterial(entries: MaterialEntry[], now: Date): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const entry of entries) {
     if (!isRecent(entry, now)) continue;
-    for (const tag of entry.tags) counts[tag] = (counts[tag] ?? 0) + 1;
+    for (const tag of entry.tags) {
+      const key = tag.toLowerCase();
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
   }
   return counts;
 }

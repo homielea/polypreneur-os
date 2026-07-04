@@ -56,6 +56,14 @@ describe("groupByTag", () => {
 });
 
 describe("reflectionMaterial", () => {
+  it("lowercases tag keys so the provider's case-insensitive lookup lands", () => {
+    const material = reflectionMaterial(
+      [makeEntry({ tags: ["Pricing"] }), makeEntry({ tags: ["pricing"] })],
+      NOW,
+    );
+    expect(material).toEqual({ pricing: 2 });
+  });
+
   it("counts only entries inside the material window, per tag", () => {
     const material = reflectionMaterial(
       [
