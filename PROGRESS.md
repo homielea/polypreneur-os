@@ -10,6 +10,14 @@ Build log for Polypreneur OS v1 (spec: `polypreneur-os-fable5-spec.md`). One or 
 - Auth: email/password via `AuthContext`, `/login` page with signin/signup toggle, protected `/app` routes.
 - App shell: responsive sidebar layout with Today / Ledger / Ideas nav; placeholder pages for features 2–4.
 
+## Feature 2 — Highest-Leverage Home Screen + scoring engine
+
+- Scoring engine as a standalone service in `src/lib/scoring/`: no React/Supabase imports in the core (`engine.ts`), persistence injected via a `ScoreStore` interface, providers pluggable via `registerProvider` (v2's Neglect Radar / Reflection Pipe just implement `LeverageProvider`).
+- v1 providers: `manual-leverage` (user's 1–5 rating × 10) and `top20-boost` (+15 for actions promoted from 80/20 triage). Ranking reasons are shown in the UI so ordering is never a black box.
+- 7 vitest tests cover ranking, tie-breaks, pluggability, additive-only enforcement, and event recording (`bun run test`).
+- Today screen: quick add (title / category / leverage), ranked open-action list with complete + delete, quiet "gathered this week" per-category totals — no targets, streaks, or comparisons.
+- Completing an action records a score event worth its leverage rating in its category.
+
 ### Decisions (approved or per default rules)
 
 - Kept the Vite + React + shadcn scaffold instead of the spec's Next.js — approved by Lea (simpler; nothing in v1 needs SSR).
